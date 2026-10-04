@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *, .force-dark, .force-dark *):not(:where(.force-light, .force-light *)));
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --background: #ffffff;
+    --foreground: #111827;
+
+    --card: #ffffff;
+    --card-foreground: #111827;
+
+    --popover: #ffffff;
+    --popover-foreground: #111827;
+
+    --primary: #615ef0;
+    --primary-foreground: #ffffff;
+    --primary-soft: #f0f0fe;
+    --primary-soft-hover: #e5e5fd;
+    --primary-active-item: #f5f5ff;
+
+    --secondary: #f4f4f5;
+    --secondary-foreground: #18181b;
+
+    --muted: #f4f4f6;
+    --muted-foreground: #71717a;
+
+    --accent: #f0f0fe;
+    --accent-foreground: #615ef0;
+
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+
+    --border: #f0f0f2;
+    --input: #f4f4f6;
+    --ring: #615ef0;
+
+    --radius: 0.75rem;
+
+    --bubble-incoming: #ffffff;
+    --bubble-incoming-foreground: #111827;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --background: #0f111a;
+    --foreground: #f4f4f6;
+
+    --card: #151824;
+    --card-foreground: #f4f4f6;
+
+    --popover: #1c2030;
+    --popover-foreground: #f4f4f6;
+
+    --primary: #615ef0;
+    --primary-foreground: #ffffff;
+    --primary-soft: rgba(97, 94, 240, 0.18);
+    --primary-soft-hover: rgba(97, 94, 240, 0.28);
+    --primary-active-item: rgba(97, 94, 240, 0.22);
+
+    --secondary: rgba(255, 255, 255, 0.08);
+    --secondary-foreground: #f4f4f6;
+
+    --muted: #1c2030;
+    --muted-foreground: #9ca3af;
+
+    --accent: rgba(97, 94, 240, 0.18);
+    --accent-foreground: #818cf8;
+
+    --destructive: #f87171;
+    --destructive-foreground: #ffffff;
+
+    --border: rgba(255, 255, 255, 0.08);
+    --input: #151824;
+    --ring: #818cf8;
+
+    --bubble-incoming: #1a1d2e;
+    --bubble-incoming-foreground: #f4f4f6;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-hover: var(--primary-soft-hover);
+  --color-primary-active-item: var(--primary-active-item);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-bubble-incoming: var(--bubble-incoming);
+  --color-bubble-incoming-foreground: var(--bubble-incoming-foreground);
+  --radius-xl: var(--radius);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "rlig" 1, "calt" 1;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
