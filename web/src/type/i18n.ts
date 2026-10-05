@@ -48,7 +48,6 @@ export interface Translations {
   aboutGroup: string;
   username: string;
   department: string;
-  localTime: string;
   bio: string;
   copy: string;
   copied: string;
@@ -82,14 +81,6 @@ export interface Translations {
     hacktoberfest: string;
     request: string;
     followUp: string;
-  };
-  roles: {
-    marketDevelopment: string;
-    areaSalesManager: string;
-    administrator: string;
-    accountExecutive: string;
-    proposalWriter: string;
-    nursingAssistant: string;
   };
   emptyChat: string;
   emptyChatSub: string;

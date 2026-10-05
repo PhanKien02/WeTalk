@@ -10,8 +10,6 @@ export type UserStatusType = UserStatus;
 export interface User {
   id: string;
   name: string;
-  roleKey?: string;
-  roleTitle?: string;
   avatar: string;
   status: UserStatus;
   email?: string;
@@ -19,8 +17,6 @@ export interface User {
   location?: string;
   bio?: string;
   username?: string;
-  department?: string;
-  localTime?: string;
 }
 
 export enum TagToneEnum {

@@ -61,8 +61,7 @@ export function NewConversationModal({
     return contactList.filter(
       (u) =>
         u.name.toLowerCase().includes(q) ||
-        (u.username && u.username.toLowerCase().includes(q)) ||
-        (u.department && u.department.toLowerCase().includes(q)),
+        (u.username && u.username.toLowerCase().includes(q)),
     );
   }, [contactList, searchQuery]);
 
@@ -206,9 +205,7 @@ export function NewConversationModal({
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground truncate">
-                          {contact.roleTitle ||
-                            contact.department ||
-                            "Thành viên"}
+                          {contact.bio || "Thành viên"}
                         </p>
                       </div>
                     </div>
@@ -332,9 +329,7 @@ export function NewConversationModal({
                           {contact.name}
                         </span>
                         <p className="text-xs text-muted-foreground truncate">
-                          {contact.roleTitle ||
-                            contact.department ||
-                            "Thành viên"}
+                          {contact.bio || "Thành viên"}
                         </p>
                       </div>
                     </div>

@@ -5,10 +5,8 @@ import {
   AtSign,
   Bell,
   BellOff,
-  Briefcase,
   Check,
   ChevronDown,
-  Clock,
   Copy,
   FileText,
   Info,
@@ -226,7 +224,7 @@ export function DirectoryPanel({
           <p className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400 mt-0.5">
             {isGroup
               ? `${conversation.memberCount || members.length} ${t.members.toLowerCase()}`
-              : user.roleTitle || user.name}
+              : user.username || user.name}
           </p>
 
           {/* Quick Action Buttons */}
@@ -406,21 +404,6 @@ export function DirectoryPanel({
                     </div>
                   )}
 
-                  {/* Department */}
-                  {user.department && (
-                    <div className="flex items-center gap-2.5">
-                      <Briefcase className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0 stroke-2" />
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
-                          {t.department}
-                        </span>
-                        <span className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 truncate">
-                          {user.department}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Location */}
                   {user.location && (
                     <div className="flex items-center gap-2.5">
@@ -431,21 +414,6 @@ export function DirectoryPanel({
                         </span>
                         <span className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 truncate">
                           {user.location}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Local Time */}
-                  {user.localTime && (
-                    <div className="flex items-center gap-2.5">
-                      <Clock className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0 stroke-2" />
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
-                          {t.localTime}
-                        </span>
-                        <span className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 truncate">
-                          {user.localTime}
                         </span>
                       </div>
                     </div>

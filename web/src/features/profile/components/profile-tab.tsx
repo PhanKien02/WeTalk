@@ -29,9 +29,9 @@ export function ProfileTab({
   const initialData = {
     name: mockUsers.me.name || "Tuấn Khang",
     username: mockUsers.me.username || "@tuankhang_ux",
-    roleTitle: mockUsers.me.roleTitle || "Product Designer & Lead",
+    roleTitle: "Product Designer & Lead",
     phone: mockUsers.me.phone || "+84 987 654 321",
-    department: mockUsers.me.department || "Product & Engineering",
+    department: "Product & Engineering",
     bio:
       mockUsers.me.bio ||
       "Building intuitive interfaces and seamless real-time messaging experiences.",

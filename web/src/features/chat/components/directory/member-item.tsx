@@ -1,18 +1,9 @@
 "use client";
 
-import { useI18n } from "@/lib/i18n";
 import type { MemberItemProps } from "@/type";
 import { UserAvatar } from "../shared/user-avatar";
 
 export function MemberItem({ member }: MemberItemProps) {
-  const { t } = useI18n();
-
-  // Dịch chức danh nếu có key trong i18n
-  const roleName =
-    member.roleKey && member.roleKey in t.roles
-      ? t.roles[member.roleKey as keyof typeof t.roles]
-      : member.roleTitle;
-
   return (
     <div className="flex items-center gap-3.5 py-2.5 px-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors select-none">
       <UserAvatar
@@ -27,9 +18,11 @@ export function MemberItem({ member }: MemberItemProps) {
         <h4 className="text-[14px] font-semibold text-foreground truncate leading-snug">
           {member.name}
         </h4>
-        <span className="text-[12px] text-muted-foreground truncate leading-snug mt-0.5">
-          {roleName}
-        </span>
+        {member.username && (
+          <span className="text-[12px] text-muted-foreground truncate leading-snug mt-0.5">
+            {member.username}
+          </span>
+        )}
       </div>
     </div>
   );
