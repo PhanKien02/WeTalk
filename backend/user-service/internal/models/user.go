@@ -2,17 +2,30 @@ package models
 
 import (
 	"context"
-)
 
-const (
-	CollectionUser = "users"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type User struct {
-	ID       string `gorm:"id;primaryKey;type:uuid;default:uuid_generate_v4()" bson:"_id"`
-	Name     string             `bson:"name"`
-	Email    string             `bson:"email"`
-	Password string             `bson:"password"`
+	ID        string `gorm:"id;primaryKey;type:uuid"`
+	Name      string `gorm:"index"`
+	Email     string `gorm:"index;unique"`
+	Avatar    string `gorm:"type:varchar(255)"`
+	Phone     string `gorm:"index;len:10;unique"`
+	Bio       string `gorm:"type:text"`
+	Location  string `gorm:"type:varchar(255)"`
+	IsActive  bool   `gorm:"default:true"`
+	DeletedAt string `gorm:"type:time"`
+	CreatedAt string `gorm:"type:timestamptz"`
+	UpdatedAt string `gorm:"type:timestamptz"`
+}
+
+func (a *User) BeforeCreate(tx *gorm.DB) error {
+	if a.ID == "" {
+		a.ID = uuid.NewString()
+	}
+	return nil
 }
 
 type UserRepository interface {
