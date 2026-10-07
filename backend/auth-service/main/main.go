@@ -9,10 +9,10 @@ import (
 )
 
 func main() {
-	config.Init() 
+	config.Init()
 	r := gin.Default()
 	db := db.ConnectDB()
 
-  router.SetupRoutes(r, db)
-  r.Run(":" + config.AppConfig.Port)
+	router.SetupRoutes(r, db)
+	r.Run(":" + config.AppConfig.Port)
 }

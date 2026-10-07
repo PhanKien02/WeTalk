@@ -8,13 +8,14 @@ import (
 )
 
 type Config struct {
-	Port        string
-	DB_PORT     string
-	DB_HOST     string
-	DB_USER     string
-	DB_NAME     string
-	DB_PASSWORD string
-	JWT_SECRET  string
+	Port          string
+	DB_PORT       string
+	DB_HOST       string
+	DB_USER       string
+	DB_NAME       string
+	DB_PASSWORD   string
+	JWT_SECRET    string
+	RaBBIT_MQ_URL string
 }
 
 var AppConfig Config
@@ -28,13 +29,14 @@ func Init() error {
 	}
 
 	AppConfig = Config{
-		Port:        getEnvOrPanic("PORT"),
-		DB_PORT:     getEnvOrPanic("DB_PORT"),
-		DB_HOST:     getEnvOrPanic("DB_HOST"),
-		DB_USER:     getEnvOrPanic("DB_USER"),
-		DB_NAME:     getEnvOrPanic("DB_NAME"),
-		DB_PASSWORD: getEnvOrPanic("DB_PASSWORD"),
-		JWT_SECRET:  getEnvOrPanic("JWT_SECRET"),
+		Port:          getEnvOrPanic("PORT"),
+		DB_PORT:       getEnvOrPanic("DB_PORT"),
+		DB_HOST:       getEnvOrPanic("DB_HOST"),
+		DB_USER:       getEnvOrPanic("DB_USER"),
+		DB_NAME:       getEnvOrPanic("DB_NAME"),
+		DB_PASSWORD:   getEnvOrPanic("DB_PASSWORD"),
+		JWT_SECRET:    getEnvOrPanic("JWT_SECRET"),
+		RaBBIT_MQ_URL: getEnvOrPanic("RaBBIT_MQ_URL"),
 	}
 
 	return nil
