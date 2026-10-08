@@ -14,7 +14,6 @@ func UserRoutes(r *gin.RouterGroup, db *gorm.DB) {
 	service := service.NewUserService(userRepo)
 	handler := handler.NewUserHandler(service)
 
-	r.POST("", handler.Create)
 	r.GET("", handler.FindAll)
 	r.GET("/:id", handler.GetByID)
 }

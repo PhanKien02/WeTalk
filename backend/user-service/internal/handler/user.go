@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"wetalk/internal/models"
 	"wetalk/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -14,22 +13,6 @@ type UserHandler struct {
 
 func NewUserHandler(service *service.UserService) *UserHandler {
 	return &UserHandler{service: service}
-}
-
-func (h *UserHandler) Create(c *gin.Context) {
-	var user models.User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	err := h.service.Create(c.Request.Context(), &user)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, user)
 }
 
 func (h *UserHandler) FindAll(c *gin.Context) {

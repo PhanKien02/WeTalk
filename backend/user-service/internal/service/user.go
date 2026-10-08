@@ -14,9 +14,8 @@ func NewUserService(userRepo *repository.UserRepository) *UserService {
 	return &UserService{userRepo: userRepo}
 }
 
-func (s *UserService) Create(ctx context.Context, user *models.User) error {
-	err := s.userRepo.Create(ctx, user)
-	return err
+func (s *UserService) HandleUserCreatedEvent(ctx context.Context, user *models.User) error {
+	return s.userRepo.Create(ctx, user)
 }
 
 func (s *UserService) FindAll(ctx context.Context) ([]models.User, error) {

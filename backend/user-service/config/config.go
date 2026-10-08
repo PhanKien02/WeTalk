@@ -15,6 +15,7 @@ type Config struct {
 	DB_NAME     string
 	DB_PASSWORD string
 	JWT_SECRET  string
+	RabbitMQURL string
 }
 
 var AppConfig Config
@@ -35,6 +36,7 @@ func Init() error {
 		DB_NAME:     getEnvOrPanic("DB_NAME"),
 		DB_PASSWORD: getEnvOrPanic("DB_PASSWORD"),
 		JWT_SECRET:  getEnvOrPanic("JWT_SECRET"),
+		RabbitMQURL: getEnvOrPanic("RABBITMQ_URL"),
 	}
 
 	return nil
