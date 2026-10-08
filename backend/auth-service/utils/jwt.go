@@ -9,9 +9,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte(config.AppConfig.JWT_SECRET)
+func getJWTSecret() []byte {
+	return []byte(config.AppConfig.JWT_SECRET)
+}
 
 func GenerateJWT(id string) (string, string, error) {
+	secret := getJWTSecret()
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"id":  id,
@@ -23,8 +26,8 @@ func GenerateJWT(id string) (string, string, error) {
 			"exp": time.Now().Add(time.Hour * 24 * 7).Unix(),
 		})
 
-	accessTokenString, err := accessToken.SignedString(jwtSecret)
-	refreshTokenString, err := refreshToken.SignedString(jwtSecret)
+	accessTokenString, err := accessToken.SignedString(secret)
+	refreshTokenString, err := refreshToken.SignedString(secret)
 	if err != nil {
 		return "", "", err
 	}
@@ -34,7 +37,7 @@ func GenerateJWT(id string) (string, string, error) {
 
 func ValidateJWT(tokenString string) (*dto.UserResponse, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
+		return getJWTSecret(), nil
 	})
 	if err != nil {
 		return nil, err
