@@ -9,6 +9,8 @@ import { useAuth } from "@/lib/auth";
 import { AppLogo } from "@/components/layout/app-logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import type { AuthFormValues, AuthMode, ForgotPasswordValues } from "@/type";
+import { useLogin, useRegister } from "@/features/auth";
+import { getAuthErrorMessage } from "@/services/auth.service";
 
 export function AuthPage() {
   const { locale, setLocale, t } = useI18n();
@@ -18,6 +20,10 @@ export function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const { registerUser, isLoading: isRegisterLoading } = useRegister();
+  const { loginUser, isLoading: isLoginLoading } = useLogin();
 
   // Forgot Password modal state
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
@@ -34,6 +40,7 @@ export function AuthPage() {
       email: "",
       password: "",
       fullName: "",
+      phone: "",
     },
   });
 
@@ -49,7 +56,8 @@ export function AuthPage() {
     },
   });
 
-  const isLoading = isSubmitting || isActionLoading;
+  const isLoading =
+    isSubmitting || isActionLoading || isRegisterLoading || isLoginLoading;
 
   const onForgotSubmit = (data: ForgotPasswordValues) => {
     if (!data.forgotEmail?.trim()) return;
@@ -77,24 +85,77 @@ export function AuthPage() {
         return;
       }
 
+      const phoneTrimmed = data.phone?.trim() ?? "";
+      if (!phoneTrimmed) {
+        setError(
+          locale === "vi"
+            ? "Vui lòng nhập số điện thoại."
+            : "Please enter your phone number.",
+        );
+        return;
+      }
+
+      if (!/^[0-9]{10}$/.test(phoneTrimmed)) {
+        setError(
+          locale === "vi"
+            ? "Số điện thoại phải bao gồm đúng 10 chữ số."
+            : "Phone number must be exactly 10 digits.",
+        );
+        return;
+      }
+
       if (data.password.length < 8) {
         setError(t.passwordLengthHint);
         return;
       }
+
+      setError(null);
+      setSuccessMessage(null);
+
+      try {
+        await registerUser({
+          name: data.fullName.trim(),
+          email: data.email.trim(),
+          password: data.password,
+          phone: phoneTrimmed,
+        });
+
+        setSuccessMessage(
+          locale === "vi"
+            ? "Đăng ký tài khoản thành công! Đang chuyển sang đăng nhập..."
+            : "Account created successfully! Switching to sign in...",
+        );
+
+        setTimeout(() => {
+          setMode("signin");
+          setSuccessMessage(null);
+        }, 1500);
+      } catch (err: unknown) {
+        const rawError = getAuthErrorMessage(err);
+        if (rawError.includes("user already exists")) {
+          setError(
+            locale === "vi"
+              ? "Tài khoản (email hoặc số điện thoại) đã tồn tại."
+              : "An account with this email or phone number already exists.",
+          );
+        } else {
+          setError(rawError);
+        }
+      }
+      return;
     }
 
     setError(null);
 
     try {
-      // Simulate quick auth delay
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      await login(data.email, mode === "signup" ? data.fullName : undefined);
-    } catch {
-      setError(
-        locale === "vi"
-          ? "Đã có lỗi xảy ra. Vui lòng thử lại."
-          : "An error occurred. Please try again.",
-      );
+      await loginUser({
+        login: data.email.trim(),
+        password: data.password,
+      });
+    } catch (err: unknown) {
+      const errMessage =
+        err instanceof Error ? err.message : getAuthErrorMessage(err);
+      setError(errMessage);
     }
   };
 
@@ -183,6 +244,14 @@ export function AuthPage() {
               </button>
             </div>
 
+            {/* Success banner */}
+            {successMessage && (
+              <div className="mb-5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-xs font-medium animate-in fade-in flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>{successMessage}</span>
+              </div>
+            )}
+
             {/* Error banner */}
             {error && (
               <div className="mb-5 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-rose-700 dark:text-rose-400 text-xs font-medium animate-in fade-in">
@@ -211,18 +280,52 @@ export function AuthPage() {
                 </div>
               )}
 
-              {/* Email */}
+              {/* Phone Number (Sign Up only) */}
+              {mode === "signup" && (
+                <div className="flex flex-col gap-1.5 animate-in fade-in duration-150">
+                  <label
+                    htmlFor="phone"
+                    className="text-xs font-medium text-foreground"
+                  >
+                    {t.phoneNumber}
+                  </label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    maxLength={10}
+                    placeholder={
+                      locale === "vi"
+                        ? "Nhập số điện thoại (10 số, VD: 0912345678)"
+                        : "Enter phone number (10 digits)"
+                    }
+                    {...register("phone")}
+                    className="h-12 w-full px-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#1c2030] text-sm text-foreground placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all"
+                  />
+                </div>
+              )}
+
+              {/* Email / Login Identifier */}
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor="email"
                   className="text-xs font-medium text-foreground"
                 >
-                  Email
+                  {mode === "signin"
+                    ? locale === "vi"
+                      ? "Email hoặc Số điện thoại"
+                      : "Email or Phone number"
+                    : "Email"}
                 </label>
                 <input
                   id="email"
-                  type="email"
-                  placeholder={t.emailPlaceholder}
+                  type={mode === "signin" ? "text" : "email"}
+                  placeholder={
+                    mode === "signin"
+                      ? locale === "vi"
+                        ? "Nhập email hoặc số điện thoại"
+                        : "Enter email or phone number"
+                      : t.emailPlaceholder
+                  }
                   {...register("email", { required: true })}
                   className="h-12 w-full px-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#1c2030] text-sm text-foreground placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all"
                   autoFocus={mode === "signin"}
@@ -350,6 +453,7 @@ export function AuthPage() {
                   onClick={() => {
                     setMode("signup");
                     setError(null);
+                    setSuccessMessage(null);
                   }}
                   className="cursor-pointer font-semibold text-primary hover:underline ml-1"
                 >
@@ -364,6 +468,7 @@ export function AuthPage() {
                   onClick={() => {
                     setMode("signin");
                     setError(null);
+                    setSuccessMessage(null);
                   }}
                   className="cursor-pointer font-semibold text-primary hover:underline ml-1"
                 >

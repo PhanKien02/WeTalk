@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { mockUsers } from "@/features/chat/data/mock-data";
+import { COOKIES } from "@/lib/cookieName";
+import { removeCookie, setCookie } from "@/utils/cookies";
 import type { AuthContextType, User } from "@/type";
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -39,13 +41,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, name?: string) => {
+  const login = async (
+    loginOrEmail: string,
+    name?: string,
+    token?: string,
+    userData?: Partial<User>
+  ) => {
     const loggedUser: User = {
       ...mockUsers.me,
-      email,
-      name: name || mockUsers.me.name,
+      id: userData?.id || mockUsers.me.id,
+      email: userData?.email || (loginOrEmail.includes("@") ? loginOrEmail : mockUsers.me.email),
+      phone: userData?.phone || (!loginOrEmail.includes("@") ? loginOrEmail : undefined),
+      name: name || userData?.name || mockUsers.me.name,
     };
 
+    if (token) {
+      setCookie(COOKIES.ACCESSTOKEN, token);
+    }
     // Save cookie for middleware (7 days)
     document.cookie = `${AUTH_COOKIE}=true; path=/; max-age=604800; SameSite=Lax`;
     localStorage.setItem(AUTH_STORAGE, JSON.stringify(loggedUser));
@@ -54,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
+    removeCookie(COOKIES.ACCESSTOKEN);
     document.cookie = `${AUTH_COOKIE}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
     localStorage.removeItem(AUTH_STORAGE);
     setUser(null);
