@@ -6,28 +6,53 @@ import (
 	"wetalk/internal/dto"
 	"wetalk/internal/models"
 	"wetalk/internal/repository"
+	"wetalk/rabbitmq"
 	jwt "wetalk/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthService struct {
-	userRepo *repository.AuthRepository
+	userRepo  *repository.AuthRepository
+	publisher rabbitmq.Publisher
 }
 
-func NewAuthService(userRepo *repository.AuthRepository) *AuthService {
-	return &AuthService{userRepo: userRepo}
+type UserCreatedEvent struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
 }
 
-func (s *AuthService) Create(ctx context.Context, user *models.Auth) error {
+func NewAuthService(userRepo *repository.AuthRepository, publisher rabbitmq.Publisher) *AuthService {
+	return &AuthService{userRepo: userRepo, publisher: publisher}
+}
+
+func (s *AuthService) Create(ctx *gin.Context, user *models.Auth) error {
+	userExist, _ := s.userRepo.GetByLogin(ctx, user.Email)
+	if userExist.ID != "" {
+		return errors.New("user already exists")
+	}
 	hashedPassword, err := models.HashPassword(user.Password)
 	if err != nil {
 		return err
 	}
 	user.Password = hashedPassword
 
-	err = s.userRepo.Create(ctx, user)
-	return err
+	if err = s.userRepo.Create(ctx, user); err != nil {
+		return err
+	}
+	event := UserCreatedEvent{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+		Phone: user.Phone,
+	}
+	err = s.publisher.Publish(ctx, "user.exchange", "user.created", event)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *AuthService) GetByLogin(ctx context.Context, login string) (models.Auth, error) {

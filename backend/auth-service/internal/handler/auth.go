@@ -5,6 +5,7 @@ import (
 	"wetalk/internal/dto"
 	"wetalk/internal/models"
 	"wetalk/internal/service"
+	"wetalk/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,31 +21,51 @@ func NewAuthHandler(service *service.AuthService) *AuthHandler {
 func (h *AuthHandler) Create(c *gin.Context) {
 	var user models.Auth
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(
+			c,
+			http.StatusBadRequest,
+			"BAD_REQUEST",
+			err.Error(),
+		)
 		return
 	}
 
-	err := h.service.Create(c.Request.Context(), &user)
+	err := h.service.Create(c, &user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(
+			c,
+			http.StatusBadRequest,
+			"BAD_REQUEST",
+			err.Error(),
+		)
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	response.OK(c, user)
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(
+			c,
+			http.StatusBadRequest,
+			"BAD_REQUEST",
+			err.Error(),
+		)
 		return
 	}
 
-	res, err := h.service.Login(c, req)
+	login, err := h.service.Login(c, req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(
+			c,
+			http.StatusBadRequest,
+			"BAD_REQUEST",
+			err.Error(),
+		)
 		return
 	}
 
-	c.JSON(http.StatusOK, res)
+	response.OK(c, login)
 }
