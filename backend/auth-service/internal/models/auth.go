@@ -10,11 +10,12 @@ import (
 )
 
 type Auth struct {
-	ID       string `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	Name     string `json:"name" binding:"required"`
-	Email    string `json:"email" gorm:"index;unique"`
-	Password string `json:"password" gorm:"not null"`
-	Phone    string `json:"phone" gorm:"index;unique;size:10"`
+	ID           string `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	Name         string `json:"name" binding:"required"`
+	Email        string `json:"email" gorm:"index;unique"`
+	Password     string `json:"password" gorm:"not null"`
+	Phone        string `json:"phone" gorm:"index;unique;size:10"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 func (a *Auth) BeforeCreate(tx *gorm.DB) error {

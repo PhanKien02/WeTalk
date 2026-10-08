@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"wetalk/internal/dto"
 	"wetalk/internal/models"
 	"wetalk/internal/repository"
@@ -13,7 +14,7 @@ import (
 )
 
 type AuthService struct {
-	userRepo  *repository.AuthRepository
+	userRepo  repository.AuthRepository
 	publisher rabbitmq.Publisher
 }
 
@@ -24,7 +25,7 @@ type UserCreatedEvent struct {
 	Phone string `json:"phone"`
 }
 
-func NewAuthService(userRepo *repository.AuthRepository, publisher rabbitmq.Publisher) *AuthService {
+func NewAuthService(userRepo repository.AuthRepository, publisher rabbitmq.Publisher) *AuthService {
 	return &AuthService{userRepo: userRepo, publisher: publisher}
 }
 
@@ -80,6 +81,12 @@ func (s *AuthService) Login(ctx *gin.Context, req dto.LoginRequest) (dto.LoginRe
 	loginResponse := dto.LoginResponse{
 		User:  userResponse,
 		Token: accessToken,
+	}
+	fmt.Print("refreshtoken ", refreshToken)
+	fmt.Print("id", user.ID)
+	err = s.userRepo.UpdateRefreshToken(ctx, user.ID, refreshToken)
+	if err != nil {
+		return dto.LoginResponse{}, err
 	}
 	ctx.SetCookie("refresh_token", refreshToken, 60*60*24*7, "/", "localhost", true, true)
 	return loginResponse, nil
