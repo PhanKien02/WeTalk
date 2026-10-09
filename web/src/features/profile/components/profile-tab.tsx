@@ -88,7 +88,7 @@ export function ProfileTab({
       setAvatarError(
         locale === "vi"
           ? "Ảnh nặng hơn 2 MB. Vui lòng chọn ảnh nhỏ hơn."
-          : "Image exceeds 2 MB. Please select a smaller file."
+          : "Image exceeds 2 MB. Please select a smaller file.",
       );
       return;
     }
@@ -105,7 +105,7 @@ export function ProfileTab({
         onShowToast(
           locale === "vi"
             ? "Đã cập nhật ảnh đại diện."
-            : "Profile photo updated successfully."
+            : "Profile photo updated successfully.",
         );
       }, 500);
     };
@@ -119,7 +119,7 @@ export function ProfileTab({
     setAvatarSrc(null);
     onShowToast(
       locale === "vi" ? "Đã xoá ảnh đại diện." : "Profile photo removed.",
-      true
+      true,
     );
   };
 
@@ -152,7 +152,7 @@ export function ProfileTab({
       onShowToast(
         locale === "vi"
           ? "Đã lưu thay đổi thông tin cá nhân thành công."
-          : "Profile details updated successfully."
+          : "Profile details updated successfully.",
       );
     } catch (err: unknown) {
       console.error("Failed to update user profile:", err);
@@ -161,7 +161,7 @@ export function ProfileTab({
         errMsg ||
           (locale === "vi"
             ? "Cập nhật hồ sơ thất bại. Vui lòng thử lại."
-            : "Failed to update profile. Please try again.")
+            : "Failed to update profile. Please try again."),
       );
     }
   };
@@ -195,7 +195,7 @@ export function ProfileTab({
                 <div
                   className={cn(
                     "w-16 h-16 rounded-2xl overflow-hidden bg-primary-soft dark:bg-primary/20 flex items-center justify-center font-bold text-xl text-primary border border-border/60 dark:border-white/10 transition-opacity",
-                    isUploadingAvatar && "opacity-50"
+                    isUploadingAvatar && "opacity-50",
                   )}
                 >
                   {avatarSrc ? (
@@ -264,7 +264,9 @@ export function ProfileTab({
                     {avatarError}
                   </p>
                 ) : (
-                  <p className="text-xs text-muted-foreground">{t.avatarHint}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.avatarHint}
+                  </p>
                 )}
               </div>
             </div>
@@ -295,11 +297,12 @@ export function ProfileTab({
               htmlFor="email"
               className="text-sm font-medium text-foreground pt-2.5"
             >
-              Email
+              Email ({t.canNotUpdate})
             </label>
             <div className="max-w-md">
               <input
                 id="email"
+                disabled
                 type="email"
                 {...register("email", { required: true })}
                 className="w-full h-10 px-3.5 text-sm rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#1c2030] text-foreground focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all"
@@ -314,12 +317,13 @@ export function ProfileTab({
               htmlFor="phone"
               className="text-sm font-medium text-foreground pt-2.5"
             >
-              {t.phoneNumber}
+              {t.phoneNumber} ({t.canNotUpdate})
             </label>
             <div className="max-w-md">
               <input
                 id="phone"
                 type="tel"
+                disabled
                 {...register("phone")}
                 className="w-full h-10 px-3.5 text-sm rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#1c2030] text-foreground focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all"
               />
@@ -338,7 +342,11 @@ export function ProfileTab({
               <input
                 id="location"
                 type="text"
-                placeholder={locale === "vi" ? "Ví dụ: Hà Nội, Việt Nam" : "e.g. Hanoi, Vietnam"}
+                placeholder={
+                  locale === "vi"
+                    ? "Ví dụ: Hà Nội, Việt Nam"
+                    : "e.g. Hanoi, Vietnam"
+                }
                 {...register("location")}
                 className="w-full h-10 px-3.5 text-sm rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#1c2030] text-foreground focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/60"
               />
@@ -357,7 +365,11 @@ export function ProfileTab({
               <textarea
                 id="bio"
                 rows={3}
-                placeholder={locale === "vi" ? "Giới thiệu ngắn về bản thân..." : "Tell others a little about yourself..."}
+                placeholder={
+                  locale === "vi"
+                    ? "Giới thiệu ngắn về bản thân..."
+                    : "Tell others a little about yourself..."
+                }
                 {...register("bio")}
                 className="w-full p-3.5 text-sm rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#1c2030] text-foreground focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all resize-none leading-relaxed placeholder:text-muted-foreground/60"
               />

@@ -53,7 +53,8 @@ export const dictionaries: Record<Locale, Translations> = {
     profile: "Hồ sơ cá nhân",
     accountSettings: "Cài đặt tài khoản",
     personalInfo: "Thông tin cá nhân",
-    personalInfoSub: "Cập nhật ảnh đại diện và thông tin hồ sơ của bạn trên WeTalk.",
+    personalInfoSub:
+      "Cập nhật ảnh đại diện và thông tin hồ sơ của bạn trên WeTalk.",
     fullName: "Họ và tên",
     jobTitle: "Chức danh / Nghề nghiệp",
     phoneNumber: "Số điện thoại",
@@ -70,7 +71,8 @@ export const dictionaries: Record<Locale, Translations> = {
     security: "Bảo mật & Phiên đăng nhập",
     activeSessions: "Phiên đăng nhập đang hoạt động",
     logoutAll: "Đăng xuất khỏi tất cả thiết bị",
-    dangerZoneDesc: "Sau khi xóa tài khoản, tất cả các tin nhắn và tệp tin sẽ không thể khôi phục.",
+    dangerZoneDesc:
+      "Sau khi xóa tài khoản, tất cả các tin nhắn và tệp tin sẽ không thể khôi phục.",
     deleteAccount: "Xóa tài khoản vĩnh viễn",
     tags: {
       question: "Câu hỏi",
@@ -112,7 +114,8 @@ export const dictionaries: Record<Locale, Translations> = {
     demoLogin: "Đăng nhập nhanh (1-Click Demo)",
     passwordLengthHint: "Mật khẩu tối thiểu 8 ký tự",
     chatWallpaper: "Hình nền trò chuyện",
-    chatWallpaperDesc: "Tùy chỉnh màu nền và phong cách hiển thị cuộc hội thoại",
+    chatWallpaperDesc:
+      "Tùy chỉnh màu nền và phong cách hiển thị cuộc hội thoại",
     defaultEmoji: "Biểu tượng cảm xúc mặc định",
     defaultEmojiDesc: "Phản hồi nhanh bằng 1 chạm khi chưa nhập văn bản",
     chooseWallpaper: "Chọn hình nền",
@@ -135,7 +138,8 @@ export const dictionaries: Record<Locale, Translations> = {
     close: "Đóng",
     customImageUploadDesc: "Hỗ trợ định dạng JPG, PNG, WebP (tối đa 5MB)",
     bubbleStyle: "Kiểu bong bóng chat",
-    bubbleStyleDesc: "Tùy chỉnh màu sắc, hình dáng và biểu tượng cho bong bóng tin nhắn",
+    bubbleStyleDesc:
+      "Tùy chỉnh màu sắc, hình dáng và biểu tượng cho bong bóng tin nhắn",
     chooseBubbleStyle: "Chọn kiểu bong bóng",
     previewBubble: "Xem trước bong bóng hội thoại",
     showBubbleIcon: "Hiển thị icon trang trí trên tin nhắn",
@@ -145,8 +149,10 @@ export const dictionaries: Record<Locale, Translations> = {
     themeDark: "Tối",
     themeSystem: "Hệ thống",
     themeDesc: "Chọn giao diện sáng, tối hoặc tự động theo hệ điều hành",
+    canNotUpdate: "Không thể cập nhật",
   },
   en: {
+    canNotUpdate: "Can not update",
     appName: "WeTalk",
     messages: "Messages",
     searchPlaceholder: "Search messages",
@@ -193,7 +199,8 @@ export const dictionaries: Record<Locale, Translations> = {
     profile: "Profile",
     accountSettings: "Account Settings",
     personalInfo: "Personal Information",
-    personalInfoSub: "Update your profile picture, personal details and preferences.",
+    personalInfoSub:
+      "Update your profile picture, personal details and preferences.",
     fullName: "Full Name",
     jobTitle: "Job Title",
     phoneNumber: "Phone Number",
@@ -210,7 +217,8 @@ export const dictionaries: Record<Locale, Translations> = {
     security: "Security & Sessions",
     activeSessions: "Active Sessions",
     logoutAll: "Log out of all devices",
-    dangerZoneDesc: "Once you delete your account, there is no going back. Please be certain.",
+    dangerZoneDesc:
+      "Once you delete your account, there is no going back. Please be certain.",
     deleteAccount: "Delete Account Permanently",
     tags: {
       question: "Question",
@@ -252,7 +260,8 @@ export const dictionaries: Record<Locale, Translations> = {
     demoLogin: "Quick 1-Click Demo",
     passwordLengthHint: "Password must be at least 8 characters",
     chatWallpaper: "Chat Wallpaper",
-    chatWallpaperDesc: "Customize background color and visual style for this conversation",
+    chatWallpaperDesc:
+      "Customize background color and visual style for this conversation",
     defaultEmoji: "Default Emoji",
     defaultEmojiDesc: "Send a 1-tap quick reaction when message box is empty",
     chooseWallpaper: "Choose Wallpaper",
@@ -275,7 +284,8 @@ export const dictionaries: Record<Locale, Translations> = {
     close: "Close",
     customImageUploadDesc: "Supports JPG, PNG, WebP (max 5MB)",
     bubbleStyle: "Message Bubble Style",
-    bubbleStyleDesc: "Customize color, shape, and signature icon for message bubbles",
+    bubbleStyleDesc:
+      "Customize color, shape, and signature icon for message bubbles",
     chooseBubbleStyle: "Choose Bubble Style",
     previewBubble: "Preview Bubble Appearance",
     showBubbleIcon: "Show decorative icon on messages",
@@ -287,8 +297,6 @@ export const dictionaries: Record<Locale, Translations> = {
     themeDesc: "Choose light, dark, or automatic system appearance",
   },
 };
-
-
 
 const I18nContext = createContext<I18nContextType | null>(null);
 

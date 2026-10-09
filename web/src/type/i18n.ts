@@ -8,6 +8,7 @@ export type Locale = "vi" | "en" | LocaleEnum;
 export type LocaleType = Locale;
 
 export interface Translations {
+  canNotUpdate: string,
   appName: string;
   messages: string;
   searchPlaceholder: string;
