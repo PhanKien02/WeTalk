@@ -3,7 +3,6 @@ package handler
 import (
 	"net/http"
 	"wetalk/internal/dto"
-	"wetalk/internal/models"
 	"wetalk/internal/service"
 	"wetalk/pkg/response"
 
@@ -19,14 +18,9 @@ func NewAuthHandler(service *service.AuthService) *AuthHandler {
 }
 
 func (h *AuthHandler) Create(c *gin.Context) {
-	var user models.Auth
+	var user dto.RegisterRequest
 	if err := c.ShouldBindJSON(&user); err != nil {
-		response.Error(
-			c,
-			http.StatusBadRequest,
-			"BAD_REQUEST",
-			err.Error(),
-		)
+		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -35,7 +29,6 @@ func (h *AuthHandler) Create(c *gin.Context) {
 		response.Error(
 			c,
 			http.StatusBadRequest,
-			"BAD_REQUEST",
 			err.Error(),
 		)
 		return
@@ -50,7 +43,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		response.Error(
 			c,
 			http.StatusBadRequest,
-			"BAD_REQUEST",
 			err.Error(),
 		)
 		return
@@ -58,12 +50,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	login, err := h.service.Login(c, req)
 	if err != nil {
-		response.Error(
-			c,
-			http.StatusBadRequest,
-			"BAD_REQUEST",
-			err.Error(),
-		)
+		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 

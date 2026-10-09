@@ -14,11 +14,19 @@ export type ProfileTabKeyType = ProfileTabKey;
 
 export interface ProfileFormValues {
   name: string;
-  username: string;
-  roleTitle: string;
+  email: string;
   phone: string;
-  department: string;
+  location: string;
   bio: string;
+}
+
+export interface UpdateUserPayload {
+  name?: string;
+  bio?: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  location?: string;
 }
 
 export interface ChangeEmailValues {

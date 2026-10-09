@@ -19,6 +19,8 @@ func AuthRequired(jwtSecret string) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "UNAUTHORIZED",
 				"message": "Authorization header is required",
+				"success": false,
+				"data":    nil,
 			})
 			return
 		}
@@ -28,6 +30,8 @@ func AuthRequired(jwtSecret string) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "UNAUTHORIZED",
 				"message": "Authorization header format must be Bearer <token>",
+				"success": false,
+				"data":    nil,
 			})
 			return
 		}
@@ -44,6 +48,8 @@ func AuthRequired(jwtSecret string) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "UNAUTHORIZED",
 				"message": "Invalid or expired token",
+				"success": false,
+				"data":    nil,
 			})
 			return
 		}
@@ -53,6 +59,8 @@ func AuthRequired(jwtSecret string) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "UNAUTHORIZED",
 				"message": "Failed to parse token claims",
+				"success": false,
+				"data":    nil,
 			})
 			return
 		}
@@ -62,6 +70,8 @@ func AuthRequired(jwtSecret string) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "UNAUTHORIZED",
 				"message": "Token does not contain a valid user id",
+				"success": false,
+				"data":    nil,
 			})
 			return
 		}

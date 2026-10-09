@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"wetalk/internal/dto"
 	"wetalk/internal/models"
 	logger "wetalk/pkg"
 
@@ -9,7 +10,7 @@ import (
 )
 
 type AuthRepository interface {
-	Create(c context.Context, user *models.Auth) error
+	Create(c context.Context, user *dto.RegisterRequest) (*models.Auth, error)
 	GetByLogin(c context.Context, login string) (models.Auth, error)
 	UpdateRefreshToken(c context.Context, userID string, refreshToken string) error
 }
@@ -25,8 +26,10 @@ func NewAuthRepository(db *gorm.DB) AuthRepository {
 		logger: logger}
 }
 
-func (r *authrepository) Create(ctx context.Context, user *models.Auth) error {
-	return r.db.Model(&models.Auth{}).Create(user).Error
+func (r *authrepository) Create(ctx context.Context, user *dto.RegisterRequest) (*models.Auth, error) {
+	var newAuth models.Auth
+	err := r.db.Model(&models.Auth{}).Create(user).Scan(&newAuth).Error
+	return &newAuth, err
 }
 
 func (r *authrepository) GetByLogin(ctx context.Context, login string) (models.Auth, error) {

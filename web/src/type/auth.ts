@@ -68,4 +68,5 @@ export interface AuthContextType {
     userData?: Partial<User>
   ) => Promise<void>;
   logout: () => void;
+  updateUser?: (userData: Partial<User>) => void;
 }

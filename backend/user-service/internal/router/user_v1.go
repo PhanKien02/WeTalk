@@ -16,4 +16,5 @@ func UserRoutes(r *gin.RouterGroup, db *gorm.DB) {
 
 	r.GET("", handler.FindAll)
 	r.GET("/:id", handler.GetByID)
+	r.PUT("/:id", handler.Update)
 }

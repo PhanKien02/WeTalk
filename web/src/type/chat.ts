@@ -17,6 +17,8 @@ export interface User {
   location?: string;
   bio?: string;
   username?: string;
+  createdAt?: string | number | Date;
+  created_at?: string | number | Date;
 }
 
 export enum TagToneEnum {

@@ -29,7 +29,7 @@ func NewAuthService(userRepo repository.AuthRepository, publisher rabbitmq.Publi
 	return &AuthService{userRepo: userRepo, publisher: publisher}
 }
 
-func (s *AuthService) Create(ctx *gin.Context, user *models.Auth) error {
+func (s *AuthService) Create(ctx *gin.Context, user *dto.RegisterRequest) error {
 	userExist, _ := s.userRepo.GetByLogin(ctx, user.Email)
 	if userExist.ID != "" {
 		return errors.New("user already exists")
@@ -39,15 +39,15 @@ func (s *AuthService) Create(ctx *gin.Context, user *models.Auth) error {
 		return err
 	}
 	user.Password = hashedPassword
-
-	if err = s.userRepo.Create(ctx, user); err != nil {
+	userCreated, err := s.userRepo.Create(ctx, user)
+	if err != nil {
 		return err
 	}
 	event := UserCreatedEvent{
-		ID:    user.ID,
-		Name:  user.Name,
-		Email: user.Email,
-		Phone: user.Phone,
+		ID:    userCreated.ID,
+		Name:  userCreated.Name,
+		Email: userCreated.Email,
+		Phone: userCreated.Phone,
 	}
 	err = s.publisher.Publish(ctx, "user.exchange", "user.created", event)
 	if err != nil {

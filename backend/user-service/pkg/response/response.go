@@ -14,7 +14,7 @@ type Response struct {
 }
 
 type ErrorResponse struct {
-	Code    string `json:"code"`
+	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
 
@@ -36,11 +36,11 @@ func NoContent(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-func Error(c *gin.Context, status int, code string, message string) {
+func Error(c *gin.Context, status int, message string) {
 	c.JSON(status, Response{
 		Success: false,
 		Error: &ErrorResponse{
-			Code:    code,
+			Code:    status,
 			Message: message,
 		},
 	})
