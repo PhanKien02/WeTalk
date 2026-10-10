@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -10,17 +11,20 @@ import (
 )
 
 type Auth struct {
-	ID           string `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	Name         string `json:"name" binding:"required"`
-	Email        string `json:"email" gorm:"index;unique"`
-	Password     string `json:"password" gorm:"not null"`
-	Phone        string `json:"phone" gorm:"index;unique;size:10"`
-	RefreshToken string `json:"refresh_token"`
+	ID           uuid.UUID `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	Name         string    `json:"name" binding:"required"`
+	Email        string    `json:"email" gorm:"index;unique"`
+	Password     string    `json:"password" gorm:"not null"`
+	Phone        string    `json:"phone" gorm:"index;unique;size:10"`
+	RefreshToken string    `json:"refresh_token" gorm:"type:varchar(255)"`
+	IsActive     bool      `json:"is_active" gorm:"default:true;type:boolean"`
+	CreatedAt    time.Time `json:"created_at" gorm:"type:timestamp;default:CURRENT_TIMESTAMP"`
+	UpdatedAt    time.Time `json:"updated_at" gorm:"type:timestamp;default:CURRENT_TIMESTAMP"`
 }
 
 func (a *Auth) BeforeCreate(tx *gorm.DB) error {
-	if a.ID == "" {
-		a.ID = uuid.NewString()
+	if a.ID == uuid.Nil {
+		a.ID = uuid.New()
 	}
 	return nil
 }

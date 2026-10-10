@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"wetalk/internal/dto"
 	"wetalk/internal/models"
 	"wetalk/internal/repository"
 	"wetalk/rabbitmq"
 	jwt "wetalk/utils"
+
+	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,7 +34,8 @@ func NewAuthService(userRepo repository.AuthRepository, publisher rabbitmq.Publi
 
 func (s *AuthService) Create(ctx *gin.Context, user *dto.RegisterRequest) error {
 	userExist, _ := s.userRepo.GetByLogin(ctx, user.Email)
-	if userExist.ID != "" {
+
+	if userExist.ID != uuid.Nil {
 		return errors.New("user already exists")
 	}
 	hashedPassword, err := models.HashPassword(user.Password)
@@ -39,12 +43,18 @@ func (s *AuthService) Create(ctx *gin.Context, user *dto.RegisterRequest) error 
 		return err
 	}
 	user.Password = hashedPassword
-	userCreated, err := s.userRepo.Create(ctx, user)
+	newAuth := models.Auth{
+		Name:     user.Name,
+		Email:    user.Email,
+		Password: user.Password,
+		Phone:    user.Phone,
+	}
+	userCreated, err := s.userRepo.Create(ctx, &newAuth)
 	if err != nil {
 		return err
 	}
 	event := UserCreatedEvent{
-		ID:    userCreated.ID,
+		ID:    userCreated.ID.String(),
 		Name:  userCreated.Name,
 		Email: userCreated.Email,
 		Phone: userCreated.Phone,
@@ -65,15 +75,18 @@ func (s *AuthService) Login(ctx *gin.Context, req dto.LoginRequest) (dto.LoginRe
 	if err != nil {
 		return dto.LoginResponse{}, err
 	}
+	if user.ID == uuid.Nil {
+		return dto.LoginResponse{}, errors.New("user not found")
+	}
 	if !models.Compare(user.Password, req.Password) {
 		return dto.LoginResponse{}, errors.New("invalid password")
 	}
-	accessToken, refreshToken, err := jwt.GenerateJWT(user.ID)
+	accessToken, refreshToken, err := jwt.GenerateJWT(user.ID.String())
 	if err != nil {
 		return dto.LoginResponse{}, err
 	}
 	userResponse := dto.UserResponse{
-		ID:    user.ID,
+		ID:    user.ID.String(),
 		Name:  user.Name,
 		Email: user.Email,
 		Phone: user.Phone,
@@ -84,7 +97,7 @@ func (s *AuthService) Login(ctx *gin.Context, req dto.LoginRequest) (dto.LoginRe
 	}
 	fmt.Print("refreshtoken ", refreshToken)
 	fmt.Print("id", user.ID)
-	err = s.userRepo.UpdateRefreshToken(ctx, user.ID, refreshToken)
+	err = s.userRepo.UpdateRefreshToken(ctx, user.ID.String(), refreshToken)
 	if err != nil {
 		return dto.LoginResponse{}, err
 	}
