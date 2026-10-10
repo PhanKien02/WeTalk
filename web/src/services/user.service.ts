@@ -1,5 +1,8 @@
 import baseRequest from './base.service';
-import type { ApiResponse, UpdateUserPayload, User } from '@/type';
+import type { ApiResponse, QueryUsersParams, UpdateUserPayload, User } from '@/type';
+import axios from 'axios';
+
+const USER_SERVICE_URL = process.env.NEXT_PUBLIC_USER_SERVICE_URL || 'http://localhost:8080';
 
 export const userService = {
   /**
@@ -27,12 +30,23 @@ export const userService = {
   },
 
   /**
-   * Retrieves all users.
-   * Endpoint: GET /v1/users
+   * Retrieves all users with optional pagination and search parameters.
+   * Direct Endpoint: GET http://localhost:8082/api/v1/users?limit=10&offset=0&search=kien
    */
-  async getAllUsers(): Promise<ApiResponse<User[]>> {
-    const response = await baseRequest.get<ApiResponse<User[]>>('/v1/users');
-    return response.data;
+  async getAllUsers(params?: QueryUsersParams): Promise<ApiResponse<User[]>> {
+    try {
+      const response = await axios.get<ApiResponse<User[]>>(
+        `${USER_SERVICE_URL}/api/v1/users`,
+        { params }
+      );
+      return response.data;
+    } catch {
+      // Fallback via API gateway
+      const response = await baseRequest.get<ApiResponse<User[]>>('/v1/users', {
+        params,
+      });
+      return response.data;
+    }
   },
 };
 

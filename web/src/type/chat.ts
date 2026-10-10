@@ -11,7 +11,7 @@ export interface User {
   id: string;
   name: string;
   avatar: string;
-  status: UserStatus;
+  status?: UserStatus;
   email?: string;
   phone?: string;
   location?: string;
@@ -19,6 +19,12 @@ export interface User {
   username?: string;
   createdAt?: string | number | Date;
   created_at?: string | number | Date;
+}
+
+export interface QueryUsersParams {
+  limit?: number;
+  offset?: number;
+  search?: string;
 }
 
 export enum TagToneEnum {
