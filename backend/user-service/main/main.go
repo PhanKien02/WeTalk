@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+
 	"wetalk/config"
 	"wetalk/db"
 	"wetalk/internal/router"
@@ -28,6 +29,7 @@ func main() {
 	}
 
 	r := gin.Default()
+
 	db := db.ConnectDB()
 	ctx := context.Background()
 	if err := consumer.StartConsumer(ctx, rabbitMQ, db); err != nil {

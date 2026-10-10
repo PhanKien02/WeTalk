@@ -17,18 +17,16 @@ func NewUserService(userRepo *repository.UserRepository) *UserService {
 }
 
 func (s *UserService) HandleUserCreatedEvent(ctx context.Context, user *models.User) error {
-	userExist, err := s.userRepo.GetByLogin(ctx, user.Email)
-	if err == nil {
-		return nil
-	}
+	userExist, _ := s.userRepo.GetByLogin(ctx, user.Email)
+
 	if userExist.ID != "" {
 		return errors.New("user already exists")
 	}
 	return s.userRepo.Create(ctx, user)
 }
 
-func (s *UserService) FindAll(ctx context.Context) ([]models.User, error) {
-	return s.userRepo.FindAll(ctx)
+func (s *UserService) FindAll(ctx context.Context, query *dto.QueryUserDto) ([]models.User, error) {
+	return s.userRepo.FindAll(ctx, query)
 }
 
 func (s *UserService) GetByLogin(ctx context.Context, login string) (models.User, error) {

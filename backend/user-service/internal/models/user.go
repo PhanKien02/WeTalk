@@ -3,30 +3,20 @@ package models
 import (
 	"context"
 	"time"
-
-	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type User struct {
-	ID        string    `gorm:"id;primaryKey;type:uuid"`
-	Name      string    `gorm:"index"`
-	Email     string    `gorm:"index;unique"`
-	Avatar    string    `gorm:"type:varchar(255)"`
-	Phone     string    `gorm:"index;len:10;unique"`
-	Bio       string    `gorm:"type:text"`
-	Location  string    `gorm:"type:varchar(255)"`
-	IsActive  bool      `gorm:"default:true"`
-	DeletedAt string    `gorm:"type:time;default:null"`
-	CreatedAt time.Time `gorm:"type:time"`
-	UpdatedAt time.Time `gorm:"type:time"`
-}
-
-func (a *User) BeforeCreate(tx *gorm.DB) error {
-	if a.ID == "" {
-		a.ID = uuid.NewString()
-	}
-	return nil
+	ID        string    `json:"id" gorm:"id;primaryKey;type:uuid"`
+	Name      string    `json:"name" gorm:"index"`
+	Email     string    `json:"email" gorm:"index;unique"`
+	Avatar    string    `json:"avatar" gorm:"type:varchar(255)"`
+	Phone     string    `json:"phone" gorm:"index;len:10;unique"`
+	Bio       string    `json:"bio" gorm:"type:text;index"`
+	Location  string    `json:"location" gorm:"type:varchar(255);index"`
+	IsActive  bool      `json:"is_active" gorm:"default:true"`
+	DeletedAt string    `json:"deleted_at" gorm:"type:time;default:null"`
+	CreatedAt time.Time `json:"created_at" gorm:"type:time"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"type:time"`
 }
 
 type UserRepository interface {

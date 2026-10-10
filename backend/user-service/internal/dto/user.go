@@ -8,3 +8,9 @@ type UpdateUserReq struct {
 	Bio      string `json:"bio" binding:"omitempty"`
 	Location string `json:"location" binding:"omitempty"`
 }
+
+type QueryUserDto struct {
+	Limit      int    `form:"limit" binding:"omitempty"`
+	Offset     int    `form:"offset" binding:"omitempty"`
+	TextSearch string `form:"search" binding:"omitempty"`
+}

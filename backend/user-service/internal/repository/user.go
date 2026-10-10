@@ -21,9 +21,9 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 	return err
 }
 
-func (r *UserRepository) FindAll(ctx context.Context) ([]models.User, error) {
+func (r *UserRepository) FindAll(ctx context.Context, query *dto.QueryUserDto) ([]models.User, error) {
 	var users []models.User
-	err := r.db.WithContext(ctx).Model(&models.User{}).Find(&users).Error
+	err := r.db.WithContext(ctx).Model(&models.User{}).Where("email LIKE ? or phone LIKE ? or name LIKE ? and is_active = true", "%"+query.TextSearch+"%", "%"+query.TextSearch+"%", "%"+query.TextSearch+"%").Limit(query.Limit).Offset(query.Offset).Find(&users).Error
 	return users, err
 }
 

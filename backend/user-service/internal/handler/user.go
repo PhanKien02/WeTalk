@@ -18,7 +18,12 @@ func NewUserHandler(service *service.UserService) *UserHandler {
 }
 
 func (h *UserHandler) FindAll(c *gin.Context) {
-	users, err := h.service.FindAll(c.Request.Context())
+	query := dto.QueryUserDto{}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	users, err := h.service.FindAll(c.Request.Context(), &query)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return

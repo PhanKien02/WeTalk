@@ -61,6 +61,15 @@ func NewReverseProxyWithOptions(opts ProxyOptions) gin.HandlerFunc {
 		}
 	}
 
+	// Strip any CORS headers from downstream services to avoid duplicate headers with Gateway CORS
+	proxy.ModifyResponse = func(resp *http.Response) error {
+		resp.Header.Del("Access-Control-Allow-Origin")
+		resp.Header.Del("Access-Control-Allow-Credentials")
+		resp.Header.Del("Access-Control-Allow-Headers")
+		resp.Header.Del("Access-Control-Allow-Methods")
+		return nil
+	}
+
 	// Custom error handler when downstream service is down
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		log.Printf("[GATEWAY ERROR] Failed to proxy request to %s (%s): %v", opts.ServiceName, opts.TargetURL, err)
