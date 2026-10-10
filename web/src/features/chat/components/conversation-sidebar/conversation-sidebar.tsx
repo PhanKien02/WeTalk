@@ -14,7 +14,7 @@ export function ConversationSidebar({
 }: ConversationSidebarProps) {
   const { t } = useI18n();
   const params = useParams();
-  const activeId = (params?.conversationId as string) || "florencio";
+  const activeId = (params?.conversationId as string) || "";
   const [searchQuery, setSearchQuery] = useState("");
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 

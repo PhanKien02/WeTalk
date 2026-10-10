@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     document.cookie = `${AUTH_COOKIE}=true; path=/; max-age=604800; SameSite=Lax`;
     localStorage.setItem(AUTH_STORAGE, JSON.stringify(loggedUser));
     setUser(loggedUser);
-    router.push("/messages/florencio");
+    router.push("/messages");
   };
 
   const logout = () => {
