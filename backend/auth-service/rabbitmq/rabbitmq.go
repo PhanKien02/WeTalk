@@ -51,8 +51,13 @@ func (r *service) Publish(ctx context.Context, exchange, routingKey string, mess
 }
 
 func (r *service) Close() error {
-	if err := r.channel.Close(); err != nil {
-		return err
+	if r.channel != nil && !r.channel.IsClosed() {
+		if err := r.channel.Close(); err != nil {
+			return err
+		}
 	}
-	return r.conn.Close()
+	if r.conn != nil && !r.conn.IsClosed() {
+		return r.conn.Close()
+	}
+	return nil
 }

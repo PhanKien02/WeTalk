@@ -63,7 +63,6 @@ func (r *rabbitMQService) Publish(ctx context.Context, queue string, message any
 	return nil
 }
 
-
 func (r *rabbitMQService) BindQueue(queue, routingKey, exchange string) error {
 	return r.channel.QueueBind(queue, routingKey, exchange, false, nil)
 }
@@ -132,16 +131,16 @@ func (r *rabbitMQService) Subscribe(ctx context.Context, exchange, queue, routin
 }
 
 func (r *rabbitMQService) Close() error {
-	if r.channel != nil {
+	if r.channel != nil && !r.channel.IsClosed() {
 		if err := r.channel.Close(); err != nil {
-			r.logger.Error("failed to close channel")
+			r.logger.Error("failed to close channel: %v", err)
 			return err
 		}
 	}
 
-	if r.conn != nil {
+	if r.conn != nil && !r.conn.IsClosed() {
 		if err := r.conn.Close(); err != nil {
-			r.logger.Error("failed to close connection")
+			r.logger.Error("failed to close connection: %v", err)
 			return err
 		}
 	}
