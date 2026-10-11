@@ -1,17 +1,22 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { ConversationItemProps } from "@/type";
 import { UserAvatar } from "../shared/user-avatar";
 import { ConversationTag } from "../shared/conversation-tag";
 
-export function ConversationItem({ conversation, isActive }: ConversationItemProps) {
+export const ConversationItem = memo(function ConversationItem({
+  conversation,
+  isActive,
+}: ConversationItemProps) {
   const { user, lastMessage, timestamp, tags } = conversation;
 
   return (
     <Link
       href={`/messages/${conversation.id}`}
+      prefetch={false}
       className={cn(
         "group relative flex items-start gap-3.5 p-3.5 rounded-2xl transition-all duration-150 select-none cursor-pointer",
         isActive
@@ -62,4 +67,4 @@ export function ConversationItem({ conversation, isActive }: ConversationItemPro
       </div>
     </Link>
   );
-}
+});

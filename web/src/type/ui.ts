@@ -37,6 +37,7 @@ export interface ConversationTagProps {
 export interface NewConversationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 export interface MessageBubbleProps {
@@ -69,7 +70,7 @@ export interface ChatPanelProps {
 }
 
 export interface ConversationSidebarProps {
-  conversations: Conversation[];
+  conversations?: Conversation[];
 }
 
 export interface ConversationItemProps {

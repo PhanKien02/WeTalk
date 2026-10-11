@@ -27,6 +27,35 @@ export interface QueryUsersParams {
   search?: string;
 }
 
+export interface QueryConversationsParams {
+  limit?: number;
+  offset?: number;
+  textSearch?: string;
+}
+
+export interface RawConversation {
+  id: string;
+  isGroup: boolean;
+  groupName: string;
+  groupAvatar: string;
+  description: string;
+  memberCount: number;
+  lastMessage: string;
+  tags?: string[];
+  memberIds?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateConversationPayload {
+  isGroup: boolean;
+  groupName: string;
+  groupAvatar: string;
+  description: string;
+  tags?: string[];
+  memberIds: string[];
+}
+
 export enum TagToneEnum {
   ORANGE = "orange",
   GREEN = "green",
@@ -67,6 +96,7 @@ export interface Conversation {
   description?: string;
   memberCount?: number;
   pinnedCount?: number;
+  memberIds?: string[];
 }
 
 export enum FileTypeEnum {

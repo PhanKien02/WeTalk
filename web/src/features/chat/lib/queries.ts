@@ -2,7 +2,7 @@ import { mockConversations, mockFiles, mockMessages, mockTeamMembers, mockUsers 
 import { Conversation, Message, SharedFile, User } from "../types";
 
 export async function getConversations(): Promise<Conversation[]> {
-  return mockConversations;
+  return [];
 }
 
 export async function getConversation(id: string): Promise<Conversation | null> {

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
+import { conversationService } from "@/services/conversation.service";
 import { useFindUsers } from "../../hooks/use-find-users";
 import { UserAvatar } from "../shared/user-avatar";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ import type {
 export function NewConversationModal({
   isOpen,
   onClose,
+  onSuccess,
 }: NewConversationModalProps) {
   const { locale, t } = useI18n();
   const router = useRouter();
@@ -84,9 +86,29 @@ export function NewConversationModal({
 
   if (!isOpen) return null;
 
-  const handleStartDirect = (userId: string) => {
-    onClose();
-    router.push(`/messages/${userId}`);
+  const handleStartDirect = async (userId: string) => {
+    try {
+      const targetUser = users.find((u) => u.id === userId);
+      const allMemberIds = currentUser?.id ? [currentUser.id, userId] : [userId];
+
+      const res = await conversationService.createConversation({
+        isGroup: false,
+        groupName: targetUser?.name || "Cuộc trò chuyện",
+        groupAvatar: targetUser?.avatar || "",
+        description: `Trò chuyện với ${targetUser?.name || ""}`,
+        tags: ["direct"],
+        memberIds: allMemberIds,
+      });
+
+      const conversationId = res?.data?.id || userId;
+      onClose();
+      onSuccess?.();
+      router.push(`/messages/${conversationId}`);
+    } catch {
+      onClose();
+      onSuccess?.();
+      router.push(`/messages/${userId}`);
+    }
   };
 
   const toggleSelectUser = (user: User) => {
@@ -101,7 +123,7 @@ export function NewConversationModal({
     });
   };
 
-  const handleCreateGroup = (data: CreateGroupFormValues) => {
+  const handleCreateGroup = async (data: CreateGroupFormValues) => {
     if (!data.groupName.trim() || selectedUserIds.length === 0) return;
 
     const slug = data.groupName
@@ -110,12 +132,38 @@ export function NewConversationModal({
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "");
 
-    const groupId = `group-${slug || "custom"}`;
-    onClose();
-    resetGroupForm();
-    setSelectedUserIds([]);
-    setSelectedUsersMap({});
-    router.push(`/messages/${groupId}`);
+    const fallbackId = `group-${slug || "custom"}`;
+
+    try {
+      const allMemberIds = currentUser?.id
+        ? [currentUser.id, ...selectedUserIds]
+        : selectedUserIds;
+
+      const res = await conversationService.createConversation({
+        isGroup: true,
+        groupName: data.groupName.trim(),
+        groupAvatar:
+          "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=120&h=120&fit=crop",
+        description: `Nhóm thảo luận ${data.groupName.trim()}`,
+        tags: ["group"],
+        memberIds: allMemberIds,
+      });
+
+      const conversationId = res?.data?.id || fallbackId;
+      onClose();
+      onSuccess?.();
+      resetGroupForm();
+      setSelectedUserIds([]);
+      setSelectedUsersMap({});
+      router.push(`/messages/${conversationId}`);
+    } catch {
+      onClose();
+      onSuccess?.();
+      resetGroupForm();
+      setSelectedUserIds([]);
+      setSelectedUsersMap({});
+      router.push(`/messages/${fallbackId}`);
+    }
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {

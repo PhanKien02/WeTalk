@@ -1,32 +1,62 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Loader2, MessageSquareDashed, Plus } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { useConversations } from "../../hooks/use-conversations";
 import { ConversationItem } from "./conversation-item";
 import { ConversationSearch } from "./conversation-search";
+import { ConversationSidebarSkeleton } from "./conversation-skeleton";
 import { NewConversationModal } from "./new-conversation-modal";
 import type { ConversationSidebarProps } from "@/type";
 
 export function ConversationSidebar({
-  conversations,
-}: ConversationSidebarProps) {
+  conversations: initialConversations,
+}: ConversationSidebarProps = {}) {
   const { t } = useI18n();
   const params = useParams();
   const activeId = (params?.conversationId as string) || "";
-  const [searchQuery, setSearchQuery] = useState("");
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
-  const filteredConversations = useMemo(() => {
-    if (!searchQuery.trim()) return conversations;
-    const q = searchQuery.toLowerCase();
-    return conversations.filter(
-      (c) =>
-        c.user.name.toLowerCase().includes(q) ||
-        c.lastMessage.toLowerCase().includes(q),
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const {
+    conversations,
+    searchQuery,
+    setSearchQuery,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    loadMore,
+    refetch,
+  } = useConversations({ initialConversations });
+
+  // Use IntersectionObserver instead of onScroll layout thrashing
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const container = scrollContainerRef.current;
+    if (!sentinel || !container || !hasMore || isLoading || isLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadMore();
+        }
+      },
+      {
+        root: container,
+        rootMargin: "120px",
+      }
     );
-  }, [conversations, searchQuery]);
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, isLoading, isLoadingMore, loadMore]);
+
+  const handleOpenNewModal = useCallback(() => setIsNewModalOpen(true), []);
+  const handleCloseNewModal = useCallback(() => setIsNewModalOpen(false), []);
 
   return (
     <>
@@ -45,7 +75,7 @@ export function ConversationSidebar({
           <button
             type="button"
             title={t.newMessage}
-            onClick={() => setIsNewModalOpen(true)}
+            onClick={handleOpenNewModal}
             className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 active:scale-95 transition-all shadow-[0_2px_8px_rgba(97,94,240,0.35)] cursor-pointer"
           >
             <Plus className="w-5 h-5 stroke-[2.5]" />
@@ -58,18 +88,41 @@ export function ConversationSidebar({
         </div>
 
         {/* Conversations Scroll Area */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-1.5">
-          {filteredConversations.length > 0 ? (
-            filteredConversations.map((item) => (
-              <ConversationItem
-                key={item.id}
-                conversation={item}
-                isActive={item.id === activeId}
-              />
-            ))
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-1.5"
+        >
+          {isLoading && conversations.length === 0 ? (
+            <ConversationSidebarSkeleton />
+          ) : conversations.length > 0 ? (
+            <>
+              {conversations.map((item) => (
+                <ConversationItem
+                  key={item.id}
+                  conversation={item}
+                  isActive={item.id === activeId}
+                />
+              ))}
+
+              {/* Sentinel element for infinite scroll */}
+              {hasMore && (
+                <div ref={sentinelRef} className="h-1 w-full" aria-hidden="true" />
+              )}
+
+              {isLoadingMore && (
+                <div className="py-3 flex justify-center items-center text-zinc-400">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                </div>
+              )}
+            </>
           ) : (
-            <div className="py-12 text-center text-sm text-zinc-400">
-              {t.emptyChat}
+            <div className="py-14 px-4 text-center flex flex-col items-center justify-center gap-2.5">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-white/5 flex items-center justify-center text-zinc-400">
+                <MessageSquareDashed className="w-6 h-6 stroke-[1.8]" />
+              </div>
+              <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                {t.emptyChat}
+              </p>
             </div>
           )}
         </div>
@@ -78,7 +131,8 @@ export function ConversationSidebar({
       {/* Modal New Conversation */}
       <NewConversationModal
         isOpen={isNewModalOpen}
-        onClose={() => setIsNewModalOpen(false)}
+        onClose={handleCloseNewModal}
+        onSuccess={refetch}
       />
     </>
   );
