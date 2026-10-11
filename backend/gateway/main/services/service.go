@@ -34,7 +34,7 @@ func (s *Service) IsDeprecated(version string) bool {
 }
 
 // NewServiceRegistry returns the services list with base URLs shared across all API versions
-func NewServiceRegistry(authURL, userURL string, requireAuthForUsers bool) []Service {
+func NewServiceRegistry(authURL, userURL, conversationURL string, requireAuthForUsers bool) []Service {
 	versions := []string{"v1", "v2", "v3"}
 
 	return []Service{
@@ -51,6 +51,14 @@ func NewServiceRegistry(authURL, userURL string, requireAuthForUsers bool) []Ser
 			PathPrefix:         "users",
 			URL:                userURL,
 			RequireAuth:        requireAuthForUsers,
+			SupportedVersions:  versions,
+			DeprecatedVersions: []string{},
+		},
+		{
+			Name:               "conversation",
+			PathPrefix:         "conversations",
+			URL:                conversationURL,
+			RequireAuth:        true,
 			SupportedVersions:  versions,
 			DeprecatedVersions: []string{},
 		},

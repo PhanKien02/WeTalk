@@ -19,7 +19,7 @@ function isRequestCanceled(err: unknown): boolean {
   );
 }
 
-function formatConversationTimestamp(isoString?: string): string {
+export function formatConversationTimestamp(isoString?: string): string {
   if (!isoString) return "Vừa xong";
   try {
     const d = new Date(isoString);
@@ -41,7 +41,7 @@ function formatConversationTimestamp(isoString?: string): string {
   }
 }
 
-function normalizeConversation(raw: RawConversation): Conversation {
+export function normalizeConversation(raw: RawConversation): Conversation {
   const displayName =
     raw.groupName?.trim() ||
     (raw.isGroup ? "Nhóm thảo luận" : "Cuộc trò chuyện");
@@ -229,6 +229,28 @@ export function useConversations({
     }
   }, [isLoading, isLoadingMore, hasMore, enabled, debouncedQuery]);
 
+  const addOrUpdateConversation = useCallback((conv: Conversation) => {
+    setConversations((prev) => {
+      const existingIdx = prev.findIndex(
+        (c) => c.id === conv.id || (!c.isGroup && !conv.isGroup && c.user.id === conv.user.id)
+      );
+      if (existingIdx !== -1) {
+        const updated = { ...prev[existingIdx], ...conv };
+        const next = [...prev];
+        next.splice(existingIdx, 1);
+        return [updated, ...next];
+      }
+      return [conv, ...prev];
+    });
+  }, []);
+
+  const replaceConversationId = useCallback((oldId: string, updated: Conversation) => {
+    setConversations((prev) => {
+      const filtered = prev.filter((c) => c.id !== oldId && c.id !== updated.id);
+      return [updated, ...filtered];
+    });
+  }, []);
+
   return {
     conversations,
     searchQuery,
@@ -239,5 +261,7 @@ export function useConversations({
     error,
     loadMore,
     refetch,
+    addOrUpdateConversation,
+    replaceConversationId,
   };
 }

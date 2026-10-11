@@ -9,11 +9,12 @@ import (
 )
 
 type Config struct {
-	Port                 string
-	AuthServiceURL       string
-	UserServiceURL       string
-	JWTSecret            string
-	AuthRequiredForUsers bool
+	Port                   string
+	AuthServiceURL         string
+	UserServiceURL         string
+	ConversationServiceURL string
+	JWTSecret              string
+	AuthRequiredForUsers   bool
 }
 
 var AppConfig Config
@@ -29,11 +30,12 @@ func Init() {
 	}
 
 	AppConfig = Config{
-		Port:                 getEnv("PORT", "8080"),
-		AuthServiceURL:       getEnv("AUTH_SERVICE_URL", "http://localhost:8081"),
-		UserServiceURL:       getEnv("USER_SERVICE_URL", "http://localhost:8082"),
-		JWTSecret:            getEnv("JWT_SECRET", "sadfdsfasdkfnasdfkasldfnasdf8wqe475rq38rfasdfklaadsfasdfas"),
-		AuthRequiredForUsers: authRequired,
+		Port:                   getEnv("PORT", "8080"),
+		AuthServiceURL:         getEnv("AUTH_SERVICE_URL", "http://localhost:8081"),
+		UserServiceURL:         getEnv("USER_SERVICE_URL", "http://localhost:8082"),
+		ConversationServiceURL: getEnv("CONVERSATION_SERVICE_URL", "http://localhost:8083"),
+		JWTSecret:              getEnv("JWT_SECRET", "sadfdsfasdkfnasdfkasldfnasdf8wqe475rq38rfasdfklaadsfasdfas"),
+		AuthRequiredForUsers:   authRequired,
 	}
 }
 

@@ -4,16 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, MessageSquareDashed, Plus } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { useConversations } from "../../hooks/use-conversations";
+import { useConversationsContext } from "../../context/conversations-context";
 import { ConversationItem } from "./conversation-item";
 import { ConversationSearch } from "./conversation-search";
 import { ConversationSidebarSkeleton } from "./conversation-skeleton";
 import { NewConversationModal } from "./new-conversation-modal";
 import type { ConversationSidebarProps } from "@/type";
 
-export function ConversationSidebar({
-  conversations: initialConversations,
-}: ConversationSidebarProps = {}) {
+export function ConversationSidebar({}: ConversationSidebarProps = {}) {
   const { t } = useI18n();
   const params = useParams();
   const activeId = (params?.conversationId as string) || "";
@@ -31,7 +29,7 @@ export function ConversationSidebar({
     hasMore,
     loadMore,
     refetch,
-  } = useConversations({ initialConversations });
+  } = useConversationsContext();
 
   // Use IntersectionObserver instead of onScroll layout thrashing
   useEffect(() => {

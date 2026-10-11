@@ -97,6 +97,8 @@ export interface Conversation {
   memberCount?: number;
   pinnedCount?: number;
   memberIds?: string[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export enum FileTypeEnum {

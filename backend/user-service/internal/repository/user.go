@@ -35,7 +35,7 @@ func (r *UserRepository) GetByLogin(ctx context.Context, login string) (models.U
 
 func (r *UserRepository) GetByID(ctx context.Context, id string) (models.User, error) {
 	var user models.User
-	err := r.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).First(&user).Error
+	err := r.db.WithContext(ctx).Model(&models.User{}).Where("id = ? and is_active = true", id).First(&user).Error
 	return user, err
 }
 

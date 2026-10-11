@@ -8,7 +8,7 @@ import type { ChatPanelProps } from "@/type";
 
 export function ChatPanel({ conversation, initialMessages }: ChatPanelProps) {
   const { messages, sendMessage, scrollRef } = useChatMessages(
-    conversation.id,
+    conversation,
     initialMessages
   );
 

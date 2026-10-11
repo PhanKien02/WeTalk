@@ -26,6 +26,7 @@ func main() {
 	registry := services.NewServiceRegistry(
 		cfg.AuthServiceURL,
 		cfg.UserServiceURL,
+		cfg.ConversationServiceURL,
 		cfg.AuthRequiredForUsers,
 	)
 

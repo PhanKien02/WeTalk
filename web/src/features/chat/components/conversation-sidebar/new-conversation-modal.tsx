@@ -15,6 +15,7 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { conversationService } from "@/services/conversation.service";
+import { useConversationsContext } from "../../context/conversations-context";
 import { useFindUsers } from "../../hooks/use-find-users";
 import { UserAvatar } from "../shared/user-avatar";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,7 @@ export function NewConversationModal({
   const { locale, t } = useI18n();
   const router = useRouter();
   const { user: currentUser } = useAuth();
+  const { conversations } = useConversationsContext();
 
   const [mode, setMode] = useState<"direct" | "group">("direct");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -86,27 +88,20 @@ export function NewConversationModal({
 
   if (!isOpen) return null;
 
-  const handleStartDirect = async (userId: string) => {
-    try {
-      const targetUser = users.find((u) => u.id === userId);
-      const allMemberIds = currentUser?.id ? [currentUser.id, userId] : [userId];
+  const handleStartDirect = (userId: string) => {
+    // Tìm xem đã có cuộc hội thoại 1-1 với user này chưa
+    const existing = conversations.find(
+      (c) =>
+        !c.isGroup &&
+        (c.id === userId ||
+          c.user?.id === userId ||
+          c.memberIds?.includes(userId))
+    );
 
-      const res = await conversationService.createConversation({
-        isGroup: false,
-        groupName: targetUser?.name || "Cuộc trò chuyện",
-        groupAvatar: targetUser?.avatar || "",
-        description: `Trò chuyện với ${targetUser?.name || ""}`,
-        tags: ["direct"],
-        memberIds: allMemberIds,
-      });
-
-      const conversationId = res?.data?.id || userId;
-      onClose();
-      onSuccess?.();
-      router.push(`/messages/${conversationId}`);
-    } catch {
-      onClose();
-      onSuccess?.();
+    onClose();
+    if (existing) {
+      router.push(`/messages/${existing.id}`);
+    } else {
       router.push(`/messages/${userId}`);
     }
   };
