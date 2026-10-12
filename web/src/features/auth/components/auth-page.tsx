@@ -172,7 +172,7 @@ export function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-between bg-[#fafafa] dark:bg-[#0f111a] text-foreground select-text overflow-y-auto">
+    <div className="h-dvh w-full flex flex-col justify-between bg-[#fafafa] dark:bg-[#0f111a] text-foreground select-text overflow-y-auto">
       {/* Top Bar: Language & Theme Switcher */}
       <div className="w-full max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
         <Link href="/">
@@ -198,7 +198,7 @@ export function AuthPage() {
       </div>
 
       {/* Main Authentication Card */}
-      <div className="w-full flex-1 flex items-center justify-center ">
+      <div className="w-full flex-1 flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-md mx-auto">
           {/* Header */}
           <div className="flex flex-col items-center text-center">
