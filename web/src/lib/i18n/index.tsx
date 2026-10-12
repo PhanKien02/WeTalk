@@ -111,7 +111,6 @@ export const dictionaries: Record<Locale, Translations> = {
     signUpWithGoogle: "Đăng ký bằng Google",
     orDivider: "hoặc",
     signOut: "Đăng xuất",
-    demoLogin: "Đăng nhập nhanh (1-Click Demo)",
     passwordLengthHint: "Mật khẩu tối thiểu 8 ký tự",
     chatWallpaper: "Hình nền trò chuyện",
     chatWallpaperDesc:
@@ -257,7 +256,6 @@ export const dictionaries: Record<Locale, Translations> = {
     signUpWithGoogle: "Sign up with Google",
     orDivider: "or",
     signOut: "Sign out",
-    demoLogin: "Quick 1-Click Demo",
     passwordLengthHint: "Password must be at least 8 characters",
     chatWallpaper: "Chat Wallpaper",
     chatWallpaperDesc:
@@ -330,7 +328,7 @@ export function useI18n() {
   if (!context) {
     return {
       locale: "vi" as Locale,
-      setLocale: () => {},
+      setLocale: () => { },
       t: dictionaries.vi,
     };
   }

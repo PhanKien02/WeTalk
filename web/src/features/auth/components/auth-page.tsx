@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { ArrowRight, Check, Eye, EyeOff, Sparkles, X } from "lucide-react";
+import { Check, Eye, EyeOff, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { AppLogo } from "@/components/layout/app-logo";
@@ -161,17 +161,6 @@ export function AuthPage() {
 
   const [sentEmail, setSentEmail] = useState("");
 
-  const handleDemoLogin = async () => {
-    setIsActionLoading(true);
-    setError(null);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      await login("khang.tuan@wetalk.io", "Tuấn Khang");
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
-
   const handleGoogleAuth = async () => {
     setIsActionLoading(true);
     try {
@@ -209,7 +198,7 @@ export function AuthPage() {
       </div>
 
       {/* Main Authentication Card */}
-      <div className="w-full flex-1 flex items-center justify-center p-4">
+      <div className="w-full flex-1 flex items-center justify-center ">
         <div className="w-full max-w-md mx-auto">
           {/* Header */}
           <div className="flex flex-col items-center text-center">
@@ -229,21 +218,7 @@ export function AuthPage() {
           </div>
 
           {/* Form */}
-          <div className="bg-card dark:bg-[#151824] rounded-2xl border border-border dark:border-white/10 shadow-xs p-7 sm:p-8">
-            {/* Quick Demo Login Pill */}
-            <div className="mb-6">
-              <button
-                type="button"
-                onClick={handleDemoLogin}
-                disabled={isLoading}
-                className="cursor-pointer w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-linear-to-r from-primary-soft to-indigo-50 dark:from-primary/20 dark:to-indigo-950/40 border border-primary/20 text-primary text-xs font-semibold hover:border-primary/40 active:scale-98 transition-all group"
-              >
-                <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                <span>{t.demoLogin}</span>
-                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-              </button>
-            </div>
-
+          <div className="bg-card dark:bg-[#151824] rounded-2xl border border-border dark:border-white/10 shadow-xs p-7 mt-1 sm:p-8">
             {/* Success banner */}
             {successMessage && (
               <div className="mb-5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-xs font-medium animate-in fade-in flex items-center gap-2">
@@ -402,6 +377,40 @@ export function AuthPage() {
                   <span>{mode === "signin" ? t.signIn : t.signUp}</span>
                 )}
               </button>
+              {/* Toggle between Sign in & Sign up */}
+              <div className="mt-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                {mode === "signin" ? (
+                  <>
+                    <span>{t.dontHaveAccount} </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("signup");
+                        setError(null);
+                        setSuccessMessage(null);
+                      }}
+                      className="cursor-pointer font-semibold text-primary hover:underline ml-1"
+                    >
+                      {t.signUp}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span>{t.alreadyHaveAccount} </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("signin");
+                        setError(null);
+                        setSuccessMessage(null);
+                      }}
+                      className="cursor-pointer font-semibold text-primary hover:underline ml-1"
+                    >
+                      {t.signIn}
+                    </button>
+                  </>
+                )}
+              </div>
             </form>
 
             {/* Divider "hoặc" */}
@@ -443,40 +452,7 @@ export function AuthPage() {
             </button>
           </div>
 
-          {/* Toggle between Sign in & Sign up */}
-          <div className="mt-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
-            {mode === "signin" ? (
-              <>
-                <span>{t.dontHaveAccount} </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode("signup");
-                    setError(null);
-                    setSuccessMessage(null);
-                  }}
-                  className="cursor-pointer font-semibold text-primary hover:underline ml-1"
-                >
-                  {t.signUp}
-                </button>
-              </>
-            ) : (
-              <>
-                <span>{t.alreadyHaveAccount} </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode("signin");
-                    setError(null);
-                    setSuccessMessage(null);
-                  }}
-                  className="cursor-pointer font-semibold text-primary hover:underline ml-1"
-                >
-                  {t.signIn}
-                </button>
-              </>
-            )}
-          </div>
+
         </div>
       </div>
 

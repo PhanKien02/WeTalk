@@ -111,7 +111,6 @@ export interface Translations {
   signUpWithGoogle: string;
   orDivider: string;
   signOut: string;
-  demoLogin: string;
   passwordLengthHint: string;
   chatWallpaper: string;
   chatWallpaperDesc: string;
