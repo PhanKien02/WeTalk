@@ -84,13 +84,6 @@ export async function refreshToken() {
                         // Use a separate axios call to avoid the main instance's interceptors
                         const response = await axios.post(
                                 `${BASE_URL}/v1/auth/refresh-token`,
-                                {},
-                                {
-                                        withCredentials: true,
-                                        headers: {
-                                                'Content-Type': 'application/json',
-                                        },
-                                }
                         );
 
                         const { data } = response.data;

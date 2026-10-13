@@ -17,4 +17,5 @@ func AuthRoutes(r *gin.RouterGroup, db *gorm.DB, publisher rabbitmq.Publisher) {
 
 	r.POST("/register", handler.Create)
 	r.POST("/login", handler.Login)
+	r.POST("/refresh-token", handler.RefreshToken)
 }

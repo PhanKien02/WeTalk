@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"wetalk/internal/dto"
 	"wetalk/internal/models"
@@ -95,8 +94,34 @@ func (s *AuthService) Login(ctx *gin.Context, req dto.LoginRequest) (dto.LoginRe
 		User:  userResponse,
 		Token: accessToken,
 	}
-	fmt.Print("refreshtoken ", refreshToken)
-	fmt.Print("id", user.ID)
+	err = s.userRepo.UpdateRefreshToken(ctx, user.ID.String(), refreshToken)
+	if err != nil {
+		return dto.LoginResponse{}, err
+	}
+	ctx.SetCookie("refresh_token", refreshToken, 60*60*24*7, "/", "localhost", true, true)
+	return loginResponse, nil
+}
+
+func (s *AuthService) RefreshToken(ctx *gin.Context, refreshToken string) (dto.LoginResponse, error) {
+	var userFormToken, _ = jwt.ValidateJWT(refreshToken)
+	user, err := s.userRepo.RefreshToken(ctx, userFormToken.ID, refreshToken)
+	if err != nil {
+		return dto.LoginResponse{}, err
+	}
+	if user.ID == uuid.Nil {
+		return dto.LoginResponse{}, errors.New("user not found or invalid refresh token")
+	}
+	accessToken, refreshToken, err := jwt.GenerateJWT(user.ID.String())
+	userResponse := dto.UserResponse{
+		ID:    user.ID.String(),
+		Name:  user.Name,
+		Email: user.Email,
+		Phone: user.Phone,
+	}
+	loginResponse := dto.LoginResponse{
+		User:  userResponse,
+		Token: accessToken,
+	}
 	err = s.userRepo.UpdateRefreshToken(ctx, user.ID.String(), refreshToken)
 	if err != nil {
 		return dto.LoginResponse{}, err

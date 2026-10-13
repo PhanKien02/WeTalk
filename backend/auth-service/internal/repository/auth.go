@@ -12,6 +12,7 @@ type AuthRepository interface {
 	Create(c context.Context, user *models.Auth) (*models.Auth, error)
 	GetByLogin(c context.Context, login string) (models.Auth, error)
 	UpdateRefreshToken(c context.Context, userID string, refreshToken string) error
+	RefreshToken(c context.Context, userID string, refreshToken string) (models.Auth, error)
 }
 type authrepository struct {
 	db     *gorm.DB
@@ -38,4 +39,10 @@ func (r *authrepository) GetByLogin(ctx context.Context, login string) (models.A
 
 func (r *authrepository) UpdateRefreshToken(ctx context.Context, userID string, refreshToken string) error {
 	return r.db.Model(&models.Auth{}).Where("id = ?", userID).Update("refresh_token", refreshToken).Error
+}
+
+func (r *authrepository) RefreshToken(ctx context.Context, userID string, refreshToken string) (models.Auth, error) {
+	var user models.Auth
+	err := r.db.Model(&models.Auth{}).Where("id = ? and is_active = true and refresh_token = ?", userID, refreshToken).First(&user).Error
+	return user, err
 }

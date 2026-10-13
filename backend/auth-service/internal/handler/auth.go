@@ -56,3 +56,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	response.OK(c, login)
 }
+
+func (h *AuthHandler) RefreshToken(c *gin.Context) {
+	refreshToken, _ := c.Cookie("refresh_token")
+	login, err := h.service.RefreshToken(c, refreshToken)
+	if err != nil {
+		response.Error(c, http.StatusUnauthorized, "Refresh token not found")
+		return
+	}
+	response.OK(c, login)
+}

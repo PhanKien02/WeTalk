@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { mockUsers } from "@/features/chat/data/mock-data";
 import { COOKIES } from "@/lib/cookieName";
-import { removeCookie, setCookie } from "@/utils/cookies";
+import { clearCookies, removeCookie, setCookie } from "@/utils/cookies";
 import type { AuthContextType, User } from "@/type";
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     document.cookie = `${AUTH_COOKIE}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
     localStorage.removeItem(AUTH_STORAGE);
     setUser(null);
+    clearCookies();
     router.push("/login");
   };
 
