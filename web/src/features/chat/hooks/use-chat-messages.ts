@@ -39,14 +39,14 @@ export function useChatMessages(
   useEffect(() => {
     currentConversationIdRef.current = conversationId;
 
-    // If conversation is in the backend list and has a distinct ID, consider it created
+    // Check if the current conversation is already a real conversation in the server list
     const existsInServerList = conversations.some(
       (c) =>
         c.id === conversationId &&
-        c.id !== conversation?.user?.id &&
-        !c.id.startsWith("mock-")
+        !c.id.startsWith("mock-") &&
+        !c.id.startsWith("temp-")
     );
-    isCreatedOnBackendRef.current = existsInServerList;
+    isCreatedOnBackendRef.current = existsInServerList || Boolean(conversation?.created_at);
     isCreatingRef.current = false;
   }, [conversationId, conversation, initialMessages, conversations]);
 
@@ -91,35 +91,54 @@ export function useChatMessages(
     const isGroup = conversation?.isGroup === true;
     const isFirstMessage = messages.length === 0;
 
+    // Target user ID in direct conversation
+    const targetUserId =
+      conversation?.memberIds?.find((id) => id && id !== currentUser?.id) ||
+      (conversation?.user?.id && conversation.user.id !== activeConvId
+        ? conversation.user.id
+        : activeConvId !== conversation?.id
+        ? activeConvId
+        : conversation?.user?.id || activeConvId);
+
     // Kiểm tra xem cuộc hội thoại này đã tồn tại trên backend chưa
     const alreadyExistsInContext = conversations.some(
       (c) =>
-        c.id === activeConvId &&
-        c.id !== conversation?.user?.id &&
-        !c.id.startsWith("mock-")
+        (c.id === activeConvId &&
+          !c.id.startsWith("mock-") &&
+          !c.id.startsWith("temp-")) ||
+        (!c.isGroup && targetUserId && c.memberIds?.includes(targetUserId))
     );
+    const hasCreatedAt = Boolean(conversation?.created_at);
     const isAlreadyCreated =
-      isCreatedOnBackendRef.current || alreadyExistsInContext;
+      isCreatedOnBackendRef.current || alreadyExistsInContext || hasCreatedAt;
 
     // Trường hợp cuộc hội thoại đã có sẵn (hoặc là group): Cập nhật last message ở client
     if (isAlreadyCreated || isGroup) {
-      if (conversation) {
+      const realConv =
+        conversations.find(
+          (c) =>
+            c.id === activeConvId ||
+            (!c.isGroup && targetUserId && c.memberIds?.includes(targetUserId))
+        ) || conversation;
+
+      if (realConv) {
+        const targetId = realConv.id || activeConvId;
         addOrUpdateConversation({
-          ...conversation,
-          id: activeConvId,
+          ...realConv,
+          id: targetId,
           lastMessage: trimmedContent || (images?.length ? "[Hình ảnh]" : ""),
           timestamp: "Vừa xong",
         });
+
+        if (targetId !== activeConvId) {
+          currentConversationIdRef.current = targetId;
+          window.history.replaceState(null, "", `/messages/${targetId}`);
+        }
       }
       return;
     }
 
     // Trường hợp cuộc hội thoại 1-1 CHƯA tạo trên backend:
-    // Theo yêu cầu:
-    // - khi user ấn gửi sẽ lập tức tạo mới cuộc hội thoại ở client get user by id để lấy thông tin người gửi
-    // - nếu không phải nhóm GroupName là tên hai người ghép lại
-    // - sau khi gửi tin nhắn đầu tiên sẽ call api tạo mới cuộc hội thoại:
-    //   POST 'http://localhost:8080/api/v1/conversations'
     if (!isAlreadyCreated && !isGroup) {
       if (isCreatingRef.current) return;
       isCreatingRef.current = true;

@@ -433,6 +433,18 @@
     postcss "^8.5.16"
     tailwindcss "4.3.3"
 
+"@tanstack/query-core@5.104.3":
+  version "5.104.3"
+  resolved "https://registry.npmjs.org/@tanstack/query-core/-/query-core-5.104.3.tgz"
+  integrity sha512-DZY9TuJAOgU3UyHUhXb4CcTYEHNZszlwkPg4VViIwTxOKzLprPUU+rbaPZQd3srqkGOtpaDdKpW972UV/LKlcg==
+
+"@tanstack/react-query@^5.104.3":
+  version "5.104.3"
+  resolved "https://registry.npmjs.org/@tanstack/react-query/-/react-query-5.104.3.tgz"
+  integrity sha512-5Ts1ImwJKqoJgPkLxl9WrPQy1JEoEmti3MaaODCfBamHUGFk57IFrc+AIksPq+BAm10EsroX56qm398Z42LG7w==
+  dependencies:
+    "@tanstack/query-core" "5.104.3"
+
 "@tybys/wasm-util@^0.10.3":
   version "0.10.4"
   resolved "https://registry.npmjs.org/@tybys/wasm-util/-/wasm-util-0.10.4.tgz"

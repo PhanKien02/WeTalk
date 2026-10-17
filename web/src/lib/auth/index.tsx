@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { mockUsers } from "@/features/chat/data/mock-data";
 import { COOKIES } from "@/lib/cookieName";
 import { clearCookies, removeCookie, setCookie } from "@/utils/cookies";
 import type { AuthContextType, User } from "@/type";
@@ -30,9 +29,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const hasCookie = document.cookie
           .split("; ")
           .some((row) => row.startsWith(`${AUTH_COOKIE}=`));
-        if (hasCookie) {
-          setUser(mockUsers.me);
-        }
       }
     } catch {
       // ignore JSON parse error
@@ -47,21 +43,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token?: string,
     userData?: Partial<User>
   ) => {
-    const loggedUser: User = {
-      ...mockUsers.me,
-      id: userData?.id || mockUsers.me.id,
-      email: userData?.email || (loginOrEmail.includes("@") ? loginOrEmail : mockUsers.me.email),
-      phone: userData?.phone || (!loginOrEmail.includes("@") ? loginOrEmail : undefined),
-      name: name || userData?.name || mockUsers.me.name,
-    };
 
     if (token) {
       setCookie(COOKIES.ACCESSTOKEN, token);
     }
     // Save cookie for middleware (7 days)
     document.cookie = `${AUTH_COOKIE}=true; path=/; max-age=604800; SameSite=Lax`;
-    localStorage.setItem(AUTH_STORAGE, JSON.stringify(loggedUser));
-    setUser(loggedUser);
     router.push("/messages");
   };
 

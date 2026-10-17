@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { Loader2, MessageSquareDashed, Plus } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
@@ -8,13 +9,19 @@ import { useConversationsContext } from "../../context/conversations-context";
 import { ConversationItem } from "./conversation-item";
 import { ConversationSearch } from "./conversation-search";
 import { ConversationSidebarSkeleton } from "./conversation-skeleton";
-import { NewConversationModal } from "./new-conversation-modal";
 import type { ConversationSidebarProps } from "@/type";
+
+const NewConversationModal = dynamic(
+  () =>
+    import("./new-conversation-modal").then((mod) => mod.NewConversationModal),
+  { ssr: false }
+);
 
 export function ConversationSidebar({}: ConversationSidebarProps = {}) {
   const { t } = useI18n();
   const params = useParams();
-  const activeId = (params?.conversationId as string) || "";
+  const activeId =
+    typeof params?.conversationId === "string" ? params.conversationId : "";
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -31,27 +38,42 @@ export function ConversationSidebar({}: ConversationSidebarProps = {}) {
     refetch,
   } = useConversationsContext();
 
-  // Use IntersectionObserver instead of onScroll layout thrashing
+  // Preload dynamic modal chunk when user shows intent (hover/focus)
+  const handlePreloadNewModal = useCallback(() => {
+    void import("./new-conversation-modal");
+  }, []);
+
+  const loadMoreRef = useRef(loadMore);
+  useEffect(() => {
+    loadMoreRef.current = loadMore;
+  }, [loadMore]);
+
+  const isBusyRef = useRef(false);
+  useEffect(() => {
+    isBusyRef.current = isLoading || isLoadingMore || !hasMore;
+  }, [isLoading, isLoadingMore, hasMore]);
+
+  // Use IntersectionObserver with stable ref to prevent re-trigger loop
   useEffect(() => {
     const sentinel = sentinelRef.current;
     const container = scrollContainerRef.current;
-    if (!sentinel || !container || !hasMore || isLoading || isLoadingMore) return;
+    if (!sentinel || !container || !hasMore) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
-          loadMore();
+        if (entries[0]?.isIntersecting && !isBusyRef.current) {
+          loadMoreRef.current();
         }
       },
       {
         root: container,
-        rootMargin: "120px",
+        rootMargin: "60px",
       }
     );
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, isLoading, isLoadingMore, loadMore]);
+  }, [hasMore]);
 
   const handleOpenNewModal = useCallback(() => setIsNewModalOpen(true), []);
   const handleCloseNewModal = useCallback(() => setIsNewModalOpen(false), []);
@@ -74,6 +96,8 @@ export function ConversationSidebar({}: ConversationSidebarProps = {}) {
             type="button"
             title={t.newMessage}
             onClick={handleOpenNewModal}
+            onMouseEnter={handlePreloadNewModal}
+            onFocus={handlePreloadNewModal}
             className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 active:scale-95 transition-all shadow-[0_2px_8px_rgba(97,94,240,0.35)] cursor-pointer"
           >
             <Plus className="w-5 h-5 stroke-[2.5]" />
@@ -103,15 +127,17 @@ export function ConversationSidebar({}: ConversationSidebarProps = {}) {
               ))}
 
               {/* Sentinel element for infinite scroll */}
-              {hasMore && (
+              {hasMore ? (
                 <div ref={sentinelRef} className="h-1 w-full" aria-hidden="true" />
-              )}
+              ) : null}
 
-              {isLoadingMore && (
+              {isLoadingMore ? (
                 <div className="py-3 flex justify-center items-center text-zinc-400">
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  <span className="inline-flex items-center justify-center animate-spin text-primary">
+                    <Loader2 className="w-4 h-4" />
+                  </span>
                 </div>
-              )}
+              ) : null}
             </>
           ) : (
             <div className="py-14 px-4 text-center flex flex-col items-center justify-center gap-2.5">
@@ -126,12 +152,14 @@ export function ConversationSidebar({}: ConversationSidebarProps = {}) {
         </div>
       </div>
 
-      {/* Modal New Conversation */}
-      <NewConversationModal
-        isOpen={isNewModalOpen}
-        onClose={handleCloseNewModal}
-        onSuccess={refetch}
-      />
+      {/* Modal New Conversation - Loaded dynamically and rendered conditionally */}
+      {isNewModalOpen ? (
+        <NewConversationModal
+          isOpen={isNewModalOpen}
+          onClose={handleCloseNewModal}
+          onSuccess={refetch}
+        />
+      ) : null}
     </>
   );
 }

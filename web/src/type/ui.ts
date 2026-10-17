@@ -98,9 +98,3 @@ export interface MemberItemProps {
 export interface FileItemProps {
   file: SharedFile;
 }
-
-export interface ConversationPageProps {
-  params: Promise<{
-    conversationId: string;
-  }>;
-}

@@ -17,6 +17,7 @@ export const ConversationItem = memo(function ConversationItem({
     <Link
       href={`/messages/${conversation.id}`}
       prefetch={false}
+      style={{ contentVisibility: "auto", containIntrinsicSize: "0 76px" }}
       className={cn(
         "group relative flex items-start gap-3.5 p-3.5 rounded-2xl transition-all duration-150 select-none cursor-pointer",
         isActive
@@ -57,13 +58,13 @@ export const ConversationItem = memo(function ConversationItem({
         </p>
 
         {/* Tags nhãn */}
-        {tags && tags.length > 0 && (
+        {tags && tags.length > 0 ? (
           <div className="flex flex-wrap items-center gap-1.5 mt-1">
             {tags.map((tag) => (
               <ConversationTag key={tag.id} tag={tag} />
             ))}
           </div>
-        )}
+        ) : null}
       </div>
     </Link>
   );

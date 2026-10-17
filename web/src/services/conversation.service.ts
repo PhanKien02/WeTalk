@@ -24,16 +24,14 @@ export const conversationService = {
   async getConversationById(
     id: string
   ): Promise<ApiResponse<RawConversation>> {
-    const response = await baseRequest.get<
-      ApiResponse<RawConversation> | RawConversation
-    >(`/v1/conversations/${id}`);
+    const response = await baseRequest.get(`/v1/conversations/${id}`);
     const payload = response.data;
     if (payload && typeof payload === "object" && "data" in payload && payload.data) {
-      return payload as ApiResponse<RawConversation>;
+      return payload;
     }
     return {
       success: true,
-      data: payload as RawConversation,
+      data: payload,
     };
   },
 

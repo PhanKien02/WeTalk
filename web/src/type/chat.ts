@@ -25,6 +25,7 @@ export interface QueryUsersParams {
   limit?: number;
   offset?: number;
   search?: string;
+  ids?: string[];
 }
 
 export interface QueryConversationsParams {

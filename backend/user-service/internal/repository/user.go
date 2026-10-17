@@ -23,7 +23,17 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 
 func (r *UserRepository) FindAll(ctx context.Context, query *dto.QueryUserDto) ([]models.User, error) {
 	var users []models.User
-	err := r.db.WithContext(ctx).Model(&models.User{}).Where("email LIKE ? or phone LIKE ? or name LIKE ? and is_active = true", "%"+query.TextSearch+"%", "%"+query.TextSearch+"%", "%"+query.TextSearch+"%").Limit(query.Limit).Offset(query.Offset).Find(&users).Error
+	queryBuilder := r.db.WithContext(ctx).Model(&models.User{}).Where("is_active = true")
+
+	if query.TextSearch != "" {
+		queryBuilder = queryBuilder.Where("email LIKE ? OR phone LIKE ? OR name LIKE ?", "%"+query.TextSearch+"%", "%"+query.TextSearch+"%", "%"+query.TextSearch+"%")
+	}
+
+	if len(query.Ids) > 0 {
+		queryBuilder = queryBuilder.Where("id IN ?", query.Ids)
+	}
+
+	err := queryBuilder.Limit(query.Limit).Offset(query.Offset).Find(&users).Error
 	return users, err
 }
 
