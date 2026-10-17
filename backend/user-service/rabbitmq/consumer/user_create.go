@@ -20,7 +20,7 @@ type UserCreated struct {
 }
 
 func CreateUserConsumer(ctx context.Context, rabbitMQ rabbitmq.RabbitMQService, db *gorm.DB) error {
-	s := service.NewUserService(repository.NewUserRepository(db))
+	s := service.NewUserService(repository.NewUserRepository(db), rabbitMQ)
 
 	err := rabbitMQ.Consume(ctx, rabbitmq.QueueUser, func(body []byte) error {
 		var event UserCreated

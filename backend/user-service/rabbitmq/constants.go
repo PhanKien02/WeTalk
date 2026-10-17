@@ -14,6 +14,7 @@ const (
 // Routing Keys
 const (
 	RoutingKeyUserCreated = "user.created"
+	RoutingKeyUserActive  = "user.active"
 )
 
 // QueueBinding represents a binding rule between exchange and queue

@@ -7,11 +7,11 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetupRoutes(r *gin.Engine, db *gorm.DB, publisher rabbitmq.Publisher) {
+func SetupRoutes(r *gin.Engine, db *gorm.DB, rabbitmq rabbitmq.RabbitMQService) {
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
 	})
-	AuthRoutes(r.Group("/api/v1/auth"), db, publisher)
+	AuthRoutes(r.Group("/api/v1/auth"), db, rabbitmq)
 }

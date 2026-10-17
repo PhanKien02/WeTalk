@@ -35,7 +35,7 @@ func main() {
 	if err := consumer.StartConsumer(ctx, rabbitMQ, db); err != nil {
 		log.Fatalf("failed to start consumer: %v", err)
 	}
-	router.SetupRoutes(r, db)
+	router.SetupRoutes(r, db, rabbitMQ)
 	if err := r.Run(":" + config.AppConfig.Port); err != nil {
 		log.Fatal(err)
 	}

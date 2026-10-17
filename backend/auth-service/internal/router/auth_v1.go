@@ -10,9 +10,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func AuthRoutes(r *gin.RouterGroup, db *gorm.DB, publisher rabbitmq.Publisher) {
+func AuthRoutes(r *gin.RouterGroup, db *gorm.DB, rabbitmq rabbitmq.RabbitMQService) {
 	authRepo := repository.NewAuthRepository(db)
-	service := service.NewAuthService(authRepo, publisher)
+	service := service.NewAuthService(authRepo, rabbitmq)
 	handler := handler.NewAuthHandler(service)
 
 	r.POST("/register", handler.Create)

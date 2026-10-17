@@ -27,10 +27,14 @@ func (r *UserRepository) FindAll(ctx context.Context, query *dto.QueryUserDto) (
 	return users, err
 }
 
-func (r *UserRepository) GetByLogin(ctx context.Context, login string) (models.User, error) {
+func (r *UserRepository) GetByLogin(ctx context.Context, login string) *models.User {
 	var user models.User
-	err := r.db.WithContext(ctx).Model(&models.User{}).Where("email = ? or phone = ?", login, login).First(&user).Error
-	return user, err
+	err := r.db.WithContext(ctx).Model(&models.User{}).Where("(email = ? OR phone = ?) AND is_active = true", login, login).First(&user).Error
+	if err != nil {
+		return nil
+	}
+
+	return &user
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id string) (models.User, error) {

@@ -17,7 +17,7 @@ type Auth struct {
 	Password     string    `json:"password" gorm:"not null"`
 	Phone        string    `json:"phone" gorm:"index;unique;size:10"`
 	RefreshToken string    `json:"refresh_token" gorm:"type:varchar(255)"`
-	IsActive     bool      `json:"is_active" gorm:"default:true;type:boolean"`
+	IsActive     bool      `json:"is_active" gorm:"default:false;type:boolean"`
 	CreatedAt    time.Time `json:"created_at" gorm:"type:timestamp;default:CURRENT_TIMESTAMP"`
 	UpdatedAt    time.Time `json:"updated_at" gorm:"type:timestamp;default:CURRENT_TIMESTAMP"`
 }

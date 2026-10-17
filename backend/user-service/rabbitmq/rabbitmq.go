@@ -9,6 +9,16 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
+type RabbitMQService interface {
+	Publish(ctx context.Context, exchange, routingKey string, message any) error
+	SetupBindings(bindings []QueueBinding) error
+	InitBindings() error
+	BindQueue(queue, routingKey, exchange string) error
+	Consume(ctx context.Context, queue string, handler func([]byte) error) error
+	Subscribe(ctx context.Context, exchange, queue, routingKey string, handler func([]byte) error) error
+	Close() error
+}
+
 type rabbitMQService struct {
 	conn    *amqp091.Connection
 	channel *amqp091.Channel
@@ -37,30 +47,21 @@ func NewRabbitMQService() (RabbitMQService, error) {
 	}, nil
 }
 
-func (r *rabbitMQService) Publish(ctx context.Context, queue string, message any) error {
-	_, err := r.channel.QueueDeclare(queue, true, false, false, false, nil)
-	if err != nil {
-		r.logger.Error("failed to declare queue")
+func (r *rabbitMQService) Publish(ctx context.Context, exchange, routingKey string, message any) error {
+	if err := r.channel.ExchangeDeclare(exchange, "topic", true, false, false, false, nil); err != nil {
 		return err
 	}
 
 	body, err := json.Marshal(message)
 	if err != nil {
-		r.logger.Error("failed to parse message")
 		return err
 	}
 
-	err = r.channel.PublishWithContext(ctx, "", queue, false, false, amqp091.Publishing{
-		ContentType: "text/plain",
-		Body:        []byte(body),
+	return r.channel.PublishWithContext(ctx, exchange, routingKey, false, false, amqp091.Publishing{
+		ContentType:  "application/json",
+		DeliveryMode: amqp091.Persistent,
+		Body:         body,
 	})
-
-	if err != nil {
-		r.logger.Error("failed to publish message")
-		return err
-	}
-
-	return nil
 }
 
 func (r *rabbitMQService) BindQueue(queue, routingKey, exchange string) error {

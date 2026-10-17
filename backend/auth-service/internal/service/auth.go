@@ -16,8 +16,8 @@ import (
 )
 
 type AuthService struct {
-	userRepo  repository.AuthRepository
-	publisher rabbitmq.Publisher
+	userRepo repository.AuthRepository
+	rabbitmq rabbitmq.RabbitMQService
 }
 
 type UserCreatedEvent struct {
@@ -27,14 +27,14 @@ type UserCreatedEvent struct {
 	Phone string `json:"phone"`
 }
 
-func NewAuthService(userRepo repository.AuthRepository, publisher rabbitmq.Publisher) *AuthService {
-	return &AuthService{userRepo: userRepo, publisher: publisher}
+func NewAuthService(userRepo repository.AuthRepository, rabbitmq rabbitmq.RabbitMQService) *AuthService {
+	return &AuthService{userRepo: userRepo, rabbitmq: rabbitmq}
 }
 
 func (s *AuthService) Create(ctx *gin.Context, user *dto.RegisterRequest) error {
-	userExist, _ := s.userRepo.GetByLogin(ctx, user.Email)
+	userExist := s.userRepo.GetByLogin(ctx, user.Email)
 
-	if userExist.ID != uuid.Nil {
+	if userExist != nil {
 		return errors.New("user already exists")
 	}
 	hashedPassword, err := models.HashPassword(user.Password)
@@ -58,21 +58,22 @@ func (s *AuthService) Create(ctx *gin.Context, user *dto.RegisterRequest) error 
 		Email: userCreated.Email,
 		Phone: userCreated.Phone,
 	}
-	err = s.publisher.Publish(ctx, "user.exchange", "user.created", event)
+	err = s.rabbitmq.Publish(ctx, "user.exchange", "user.created", event)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *AuthService) GetByLogin(ctx context.Context, login string) (models.Auth, error) {
-	return s.userRepo.GetByLogin(ctx, login)
+func (s *AuthService) GetByLogin(ctx context.Context, login string) models.Auth {
+	user := s.userRepo.GetByLogin(ctx, login)
+	return *user
 }
 
 func (s *AuthService) Login(ctx *gin.Context, req dto.LoginRequest) (dto.LoginResponse, error) {
-	user, err := s.userRepo.GetByLogin(ctx, req.Login)
-	if err != nil {
-		return dto.LoginResponse{}, err
+	user := s.userRepo.GetByLogin(ctx, req.Login)
+	if user == nil {
+		return dto.LoginResponse{}, errors.New("user not found")
 	}
 	if user.ID == uuid.Nil {
 		return dto.LoginResponse{}, errors.New("user not found")
@@ -128,4 +129,12 @@ func (s *AuthService) RefreshToken(ctx *gin.Context, refreshToken string) (dto.L
 	}
 	ctx.SetCookie("refresh_token", refreshToken, 60*60*24*7, "/", "localhost", true, true)
 	return loginResponse, nil
+}
+
+func (s *AuthService) Delete(ctx context.Context, userID string) error {
+	return s.userRepo.Delete(ctx, userID)
+}
+
+func (s *AuthService) Activate(ctx context.Context, userID string) error {
+	return s.userRepo.Activate(ctx, userID)
 }

@@ -10,9 +10,11 @@ import (
 
 type AuthRepository interface {
 	Create(c context.Context, user *models.Auth) (*models.Auth, error)
-	GetByLogin(c context.Context, login string) (models.Auth, error)
+	GetByLogin(c context.Context, login string) *models.Auth
 	UpdateRefreshToken(c context.Context, userID string, refreshToken string) error
 	RefreshToken(c context.Context, userID string, refreshToken string) (models.Auth, error)
+	Delete(c context.Context, userID string) error
+	Activate(c context.Context, userID string) error
 }
 type authrepository struct {
 	db     *gorm.DB
@@ -31,18 +33,30 @@ func (r *authrepository) Create(ctx context.Context, user *models.Auth) (*models
 	return user, err
 }
 
-func (r *authrepository) GetByLogin(ctx context.Context, login string) (models.Auth, error) {
+func (r *authrepository) GetByLogin(ctx context.Context, login string) *models.Auth {
 	var user models.Auth
-	err := r.db.Model(&models.Auth{}).Where("email = ? or phone = ? and is_active = true", login, login).First(&user).Error
-	return user, err
+	err := r.db.WithContext(ctx).Model(&models.Auth{}).Where("(email = ? OR phone = ?) AND is_active = true", login, login).First(&user).Error
+	if err != nil {
+		return nil
+	}
+
+	return &user
 }
 
 func (r *authrepository) UpdateRefreshToken(ctx context.Context, userID string, refreshToken string) error {
-	return r.db.Model(&models.Auth{}).Where("id = ?", userID).Update("refresh_token", refreshToken).Error
+	return r.db.Model(&models.Auth{}).Where("id = ? and is_active = true", userID).Update("refresh_token", refreshToken).Error
 }
 
 func (r *authrepository) RefreshToken(ctx context.Context, userID string, refreshToken string) (models.Auth, error) {
 	var user models.Auth
 	err := r.db.Model(&models.Auth{}).Where("id = ? and is_active = true and refresh_token = ?", userID, refreshToken).First(&user).Error
 	return user, err
+}
+
+func (r *authrepository) Delete(ctx context.Context, userID string) error {
+	return r.db.Model(&models.Auth{}).Where("id = ?", userID).Delete(&models.Auth{}).Error
+}
+
+func (r *authrepository) Activate(ctx context.Context, userID string) error {
+	return r.db.Model(&models.Auth{}).Where("id = ?", userID).Update("is_active", true).Error
 }
