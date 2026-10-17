@@ -16,6 +16,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { conversationService } from "@/services/conversation.service";
 import { useConversationsContext } from "../../context/conversations-context";
+import { normalizeConversation } from "../../hooks/use-conversations";
 import { useFindUsers } from "../../hooks/use-find-users";
 import { UserAvatar } from "../shared/user-avatar";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,11 @@ import type {
   User,
 } from "@/type";
 
+const DEFAULT_DIRECT_AVATAR =
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop";
+const DEFAULT_GROUP_AVATAR =
+  "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=120&h=120&fit=crop";
+
 export function NewConversationModal({
   isOpen,
   onClose,
@@ -33,13 +39,18 @@ export function NewConversationModal({
   const { locale, t } = useI18n();
   const router = useRouter();
   const { user: currentUser } = useAuth();
-  const { conversations } = useConversationsContext();
+  const { conversations, addOrUpdateConversation } = useConversationsContext();
 
   const [mode, setMode] = useState<"direct" | "group">("direct");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [selectedUsersMap, setSelectedUsersMap] = useState<
     Record<string, User>
   >({});
+  const [creatingDirectUserId, setCreatingDirectUserId] = useState<
+    string | null
+  >(null);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     users,
@@ -88,21 +99,62 @@ export function NewConversationModal({
 
   if (!isOpen) return null;
 
-  const handleStartDirect = (userId: string) => {
+  const buildMemberIds = (targetIds: string[]): string[] => {
+    const rawIds = currentUser?.id
+      ? [currentUser.id, ...targetIds]
+      : targetIds;
+    return Array.from(new Set(rawIds.filter(Boolean)));
+  };
+
+  const handleStartDirect = async (contact: User) => {
+    if (creatingDirectUserId) return;
+
     // Tìm xem đã có cuộc hội thoại 1-1 với user này chưa
     const existing = conversations.find(
       (c) =>
         !c.isGroup &&
-        (c.id === userId ||
-          c.user?.id === userId ||
-          c.memberIds?.includes(userId))
+        (c.id === contact.id ||
+          c.user?.id === contact.id ||
+          c.memberIds?.includes(contact.id)),
     );
 
-    onClose();
     if (existing) {
+      onClose();
       router.push(`/messages/${existing.id}`);
-    } else {
-      router.push(`/messages/${userId}`);
+      return;
+    }
+
+    setCreatingDirectUserId(contact.id);
+    setSubmitError(null);
+
+    try {
+      const memberIds = buildMemberIds([contact.id]);
+      const res = await conversationService.createConversation({
+        isGroup: false,
+        groupName: contact.name,
+        groupAvatar: contact.avatar || DEFAULT_DIRECT_AVATAR,
+        description: `Cuộc trò chuyện với ${contact.name}`,
+        tags: ["direct"],
+        memberIds,
+      });
+
+      const createdRaw = res?.data;
+      if (createdRaw?.id) {
+        addOrUpdateConversation(normalizeConversation(createdRaw));
+        onClose();
+        onSuccess?.();
+        router.push(`/messages/${createdRaw.id}`);
+        return;
+      }
+
+      onClose();
+      router.push(`/messages/${contact.id}`);
+    } catch (err) {
+      console.error("Failed to create direct conversation:", err);
+      onClose();
+      router.push(`/messages/${contact.id}`);
+    } finally {
+      setCreatingDirectUserId(null);
     }
   };
 
@@ -119,45 +171,55 @@ export function NewConversationModal({
   };
 
   const handleCreateGroup = async (data: CreateGroupFormValues) => {
-    if (!data.groupName.trim() || selectedUserIds.length === 0) return;
+    const trimmedGroupName = data.groupName.trim();
+    if (!trimmedGroupName || selectedUserIds.length === 0 || isCreatingGroup) {
+      return;
+    }
 
-    const slug = data.groupName
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
-
-    const fallbackId = `group-${slug || "custom"}`;
+    setIsCreatingGroup(true);
+    setSubmitError(null);
 
     try {
-      const allMemberIds = currentUser?.id
-        ? [currentUser.id, ...selectedUserIds]
-        : selectedUserIds;
+      const allMemberIds = buildMemberIds(selectedUserIds);
 
       const res = await conversationService.createConversation({
         isGroup: true,
-        groupName: data.groupName.trim(),
-        groupAvatar:
-          "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=120&h=120&fit=crop",
-        description: `Nhóm thảo luận ${data.groupName.trim()}`,
+        groupName: trimmedGroupName,
+        groupAvatar: DEFAULT_GROUP_AVATAR,
+        description: `Nhóm thảo luận ${trimmedGroupName}`,
         tags: ["group"],
         memberIds: allMemberIds,
       });
 
-      const conversationId = res?.data?.id || fallbackId;
+      const createdRaw = res?.data;
+      if (createdRaw?.id) {
+        addOrUpdateConversation(normalizeConversation(createdRaw));
+      }
+
+      const conversationId =
+        createdRaw?.id ||
+        `group-${
+          trimmedGroupName
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, "") || "custom"
+        }`;
+
       onClose();
       onSuccess?.();
       resetGroupForm();
       setSelectedUserIds([]);
       setSelectedUsersMap({});
       router.push(`/messages/${conversationId}`);
-    } catch {
-      onClose();
-      onSuccess?.();
-      resetGroupForm();
-      setSelectedUserIds([]);
-      setSelectedUsersMap({});
-      router.push(`/messages/${fallbackId}`);
+    } catch (err) {
+      console.error("Failed to create group conversation:", err);
+      setSubmitError(
+        locale === "vi"
+          ? "Không thể tạo nhóm trò chuyện. Vui lòng thử lại."
+          : "Failed to create group conversation. Please try again.",
+      );
+    } finally {
+      setIsCreatingGroup(false);
     }
   };
 
@@ -279,47 +341,62 @@ export function NewConversationModal({
                 </div>
               ) : filteredContacts.length > 0 ? (
                 <>
-                  {filteredContacts.map((contact) => (
-                    <button
-                      key={contact.id}
-                      type="button"
-                      onClick={() => handleStartDirect(contact.id)}
-                      className="cursor-pointer w-full p-2.5 rounded-xl hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center justify-between text-left transition-colors group"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <UserAvatar
-                          src={contact.avatar}
-                          name={contact.name}
-                          size="md"
-                          showStatus
-                          status={contact.status}
-                        />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                              {contact.name}
-                            </span>
-                            {contact.phone && (
-                              <span className="text-xs text-zinc-400 font-normal">
-                                {contact.phone}
+                  {filteredContacts.map((contact) => {
+                    const isCreatingThis = creatingDirectUserId === contact.id;
+                    return (
+                      <button
+                        key={contact.id}
+                        type="button"
+                        disabled={Boolean(creatingDirectUserId)}
+                        onClick={() => handleStartDirect(contact)}
+                        className="cursor-pointer w-full p-2.5 rounded-xl hover:bg-zinc-50 dark:hover:bg-white/5 disabled:opacity-60 flex items-center justify-between text-left transition-colors group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <UserAvatar
+                            src={contact.avatar}
+                            name={contact.name}
+                            size="md"
+                            showStatus
+                            status={contact.status}
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                                {contact.name}
                               </span>
-                            )}
+                              {contact.phone && (
+                                <span className="text-xs text-zinc-400 font-normal">
+                                  {contact.phone}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {contact.email ||
+                                contact.bio ||
+                                (locale === "vi" ? "Thành viên" : "Member")}
+                            </p>
                           </div>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {contact.email ||
-                              contact.bio ||
-                              (locale === "vi" ? "Thành viên" : "Member")}
-                          </p>
                         </div>
-                      </div>
 
-                      <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity pr-2">
-                        <span className="text-xs font-semibold text-primary bg-primary-soft dark:bg-primary/20 px-2.5 py-1 rounded-lg">
-                          {t.send}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+                        <div
+                          className={cn(
+                            "shrink-0 transition-opacity pr-2",
+                            isCreatingThis
+                              ? "opacity-100"
+                              : "opacity-0 group-hover:opacity-100",
+                          )}
+                        >
+                          {isCreatingThis ? (
+                            <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                          ) : (
+                            <span className="text-xs font-semibold text-primary bg-primary-soft dark:bg-primary/20 px-2.5 py-1 rounded-lg">
+                              {t.send}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
 
                   {/* Loading more indicator */}
                   {isLoadingMore && (
@@ -541,11 +618,18 @@ export function NewConversationModal({
               )}
             </div>
 
+            {submitError && (
+              <div className="px-4 py-2 text-xs text-rose-500 bg-rose-500/10 border-t border-rose-500/20">
+                {submitError}
+              </div>
+            )}
+
             {/* Footer Buttons */}
             <div className="p-4 border-t border-border dark:border-white/10 bg-zinc-50/60 dark:bg-[#11131c] flex items-center justify-end gap-2.5 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
+                disabled={isCreatingGroup}
                 className="cursor-pointer px-4 py-2 rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#1c2030] text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/5 shadow-2xs transition-all"
               >
                 {t.cancel}
@@ -553,9 +637,16 @@ export function NewConversationModal({
 
               <button
                 type="submit"
-                disabled={!groupName.trim() || selectedUserIds.length === 0}
-                className="cursor-pointer px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary/95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs transition-all"
+                disabled={
+                  !groupName.trim() ||
+                  selectedUserIds.length === 0 ||
+                  isCreatingGroup
+                }
+                className="cursor-pointer px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary/95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs transition-all inline-flex items-center gap-1.5"
               >
+                {isCreatingGroup && (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                )}
                 {t.createGroup}
               </button>
             </div>

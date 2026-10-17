@@ -81,8 +81,9 @@ export async function getConversation(id: string): Promise<Conversation | null> 
 
     if (res.ok) {
       const json = await res.json();
-      if (json?.data) {
-        return normalizeConversation(json.data as RawConversation);
+      const raw = json?.data ?? json;
+      if (raw?.id) {
+        return normalizeConversation(raw as RawConversation);
       }
     }
   } catch (err) {

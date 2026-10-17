@@ -1,5 +1,7 @@
 package services
 
+import "slices"
+
 // Service defines a microservice with a single base URL shared across all its API versions (v1, v2, v3...)
 type Service struct {
 	Name               string   `json:"name"`                // e.g. "auth", "user"
@@ -15,22 +17,12 @@ type Services = Service
 
 // IsSupported checks if a version is supported by the service
 func (s *Service) IsSupported(version string) bool {
-	for _, v := range s.SupportedVersions {
-		if v == version {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(s.SupportedVersions, version)
 }
 
 // IsDeprecated checks if a version is marked as deprecated
 func (s *Service) IsDeprecated(version string) bool {
-	for _, v := range s.DeprecatedVersions {
-		if v == version {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(s.DeprecatedVersions, version)
 }
 
 // NewServiceRegistry returns the services list with base URLs shared across all API versions
@@ -41,7 +33,7 @@ func NewServiceRegistry(authURL, userURL, conversationURL string, requireAuthFor
 			PathPrefix:         "auth",
 			URL:                authURL,
 			RequireAuth:        false,
-			SupportedVersions:  []string{"v1",},
+			SupportedVersions:  []string{"v1"},
 			DeprecatedVersions: []string{},
 		},
 		{

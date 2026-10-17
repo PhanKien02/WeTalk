@@ -63,6 +63,7 @@ baseRequest.interceptors.response.use(
 
                         const newToken = await refreshToken();
                         if (newToken) {
+                                originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
                                 return baseRequest(originalRequest);
                         } else {
                                 return Promise.reject(error.response.data || 'Unauthorized');
@@ -84,12 +85,15 @@ export async function refreshToken() {
                         // Use a separate axios call to avoid the main instance's interceptors
                         const response = await axios.post(
                                 `${BASE_URL}/v1/auth/refresh-token`,
+                                {},
+                                { withCredentials: true },
                         );
 
                         const { data } = response.data;
-                        if (data?.accessToken) {
-                                setCookie(COOKIES.ACCESSTOKEN, data.accessToken);
-                                return data.accessToken as string;
+                        const newAccessToken = data?.token || data?.accessToken;
+                        if (newAccessToken) {
+                                setCookie(COOKIES.ACCESSTOKEN, newAccessToken);
+                                return newAccessToken as string;
                         }
                         if (response.status === 401) {
                                 clearCookies();

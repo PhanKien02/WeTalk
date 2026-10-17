@@ -32,12 +32,25 @@ func (h *conversationHandle) CreateConversation(c *gin.Context) {
 		return
 	}
 
+	if userId := c.GetHeader("X-User-Id"); userId != "" {
+		found := false
+		for _, id := range conversation.MemberIds {
+			if id == userId {
+				found = true
+				break
+			}
+		}
+		if !found {
+			conversation.MemberIds = append([]string{userId}, conversation.MemberIds...)
+		}
+	}
+
 	result, err := h.service.Create(&conversation)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, gin.H{"data": result})
 }
 
 func (h *conversationHandle) UpdateConversation(c *gin.Context) {
@@ -52,7 +65,7 @@ func (h *conversationHandle) UpdateConversation(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, conversation)
+	c.JSON(http.StatusOK, gin.H{"data": conversation})
 }
 
 func (h *conversationHandle) DeleteConversation(c *gin.Context) {
@@ -71,7 +84,7 @@ func (h *conversationHandle) FindById(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, conversation)
+	c.JSON(http.StatusOK, gin.H{"data": conversation})
 }
 
 func (h *conversationHandle) FindAll(c *gin.Context) {

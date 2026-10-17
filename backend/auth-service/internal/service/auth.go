@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	"wetalk/internal/dto"
 	"wetalk/internal/models"
@@ -14,6 +15,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+func setRefreshTokenCookie(ctx *gin.Context, refreshToken string) {
+	isSecure := ctx.Request.TLS != nil || ctx.GetHeader("X-Forwarded-Proto") == "https"
+	ctx.SetSameSite(http.SameSiteLaxMode)
+	ctx.SetCookie("refresh_token", refreshToken, 60*60*24*7, "/", "", isSecure, true)
+}
 
 type AuthService struct {
 	userRepo repository.AuthRepository
@@ -99,13 +106,19 @@ func (s *AuthService) Login(ctx *gin.Context, req dto.LoginRequest) (dto.LoginRe
 	if err != nil {
 		return dto.LoginResponse{}, err
 	}
-	ctx.SetCookie("refresh_token", refreshToken, 60*60*24*7, "/", "localhost", true, true)
+	setRefreshTokenCookie(ctx, refreshToken)
 	return loginResponse, nil
 }
 
 func (s *AuthService) RefreshToken(ctx *gin.Context, refreshToken string) (dto.LoginResponse, error) {
-	var userFormToken, _ = jwt.ValidateJWT(refreshToken)
-	user, err := s.userRepo.RefreshToken(ctx, userFormToken.ID, refreshToken)
+	if refreshToken == "" {
+		return dto.LoginResponse{}, errors.New("refresh token is required")
+	}
+	userFromToken, err := jwt.ValidateJWT(refreshToken)
+	if err != nil || userFromToken.ID == "" {
+		return dto.LoginResponse{}, errors.New("invalid or expired refresh token")
+	}
+	user, err := s.userRepo.RefreshToken(ctx, userFromToken.ID, refreshToken)
 	if err != nil {
 		return dto.LoginResponse{}, err
 	}
@@ -113,6 +126,9 @@ func (s *AuthService) RefreshToken(ctx *gin.Context, refreshToken string) (dto.L
 		return dto.LoginResponse{}, errors.New("user not found or invalid refresh token")
 	}
 	accessToken, refreshToken, err := jwt.GenerateJWT(user.ID.String())
+	if err != nil {
+		return dto.LoginResponse{}, err
+	}
 	userResponse := dto.UserResponse{
 		ID:    user.ID.String(),
 		Name:  user.Name,
@@ -127,7 +143,7 @@ func (s *AuthService) RefreshToken(ctx *gin.Context, refreshToken string) (dto.L
 	if err != nil {
 		return dto.LoginResponse{}, err
 	}
-	ctx.SetCookie("refresh_token", refreshToken, 60*60*24*7, "/", "localhost", true, true)
+	setRefreshTokenCookie(ctx, refreshToken)
 	return loginResponse, nil
 }
 
