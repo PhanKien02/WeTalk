@@ -18,9 +18,9 @@ export function MemberItem({ member }: MemberItemProps) {
         <h4 className="text-[14px] font-semibold text-foreground truncate leading-snug">
           {member.name}
         </h4>
-        {member.username && (
+        {(member.username || member.email) && (
           <span className="text-[12px] text-muted-foreground truncate leading-snug mt-0.5">
-            {member.username}
+            {member.username || member.email}
           </span>
         )}
       </div>

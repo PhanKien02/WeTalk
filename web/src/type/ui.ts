@@ -89,6 +89,7 @@ export interface DirectoryPanelProps {
   files: SharedFile[];
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  isLoadingMembers?: boolean;
 }
 
 export interface MemberItemProps {

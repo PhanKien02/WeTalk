@@ -19,8 +19,10 @@ export const userService = {
   async getAllUsers(params?: QueryUsersParams): Promise<ApiResponse<User[]>> {
     const response = await baseRequest.get<ApiResponse<User[]>>('/v1/users', {
       params,
+      paramsSerializer: {
+        indexes: null,
+      },
     });
-    console.log({ response })
     return response.data;
   },
 };

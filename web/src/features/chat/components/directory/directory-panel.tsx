@@ -47,6 +47,7 @@ export function DirectoryPanel({
   files,
   isCollapsed: isCollapsedProp,
   onToggleCollapse,
+  isLoadingMembers = false,
 }: DirectoryPanelProps) {
   const { t } = useI18n();
   const {
@@ -418,6 +419,31 @@ export function DirectoryPanel({
                       </div>
                     </div>
                   )}
+
+                  {/* Loading skeleton for partner details in 1-1 chat */}
+                  {isLoadingMembers && !user.bio && !user.email && !user.phone && (
+                    <div className="flex flex-col gap-2.5 py-1">
+                      <div className="flex items-center gap-2.5 animate-pulse">
+                        <div className="w-4 h-4 rounded bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+                        <div className="w-32 h-3 rounded bg-zinc-200 dark:bg-zinc-800" />
+                      </div>
+                      <div className="flex items-center gap-2.5 animate-pulse">
+                        <div className="w-4 h-4 rounded bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+                        <div className="w-40 h-3 rounded bg-zinc-200 dark:bg-zinc-800" />
+                      </div>
+                    </div>
+                  )}
+
+                  {!isLoadingMembers &&
+                    !user.bio &&
+                    !user.username &&
+                    !user.email &&
+                    !user.phone &&
+                    !user.location && (
+                      <span className="text-[13px] text-zinc-400 dark:text-zinc-500 italic py-0.5">
+                        Chưa có thông tin giới thiệu
+                      </span>
+                    )}
                 </>
               )}
             </div>
@@ -442,7 +468,9 @@ export function DirectoryPanel({
                     {t.teamMembers}
                   </h4>
                   <span className="px-1.5 py-0.2 rounded-full bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 text-[11px] font-bold">
-                    {members.length}
+                    {isLoadingMembers && members.length === 0
+                      ? conversation.memberCount || "..."
+                      : members.length}
                   </span>
                   <ChevronDown
                     className={cn(
@@ -463,11 +491,25 @@ export function DirectoryPanel({
 
               {isMembersOpen && (
                 <div className="flex flex-col gap-1 mt-1.5 animate-in fade-in-50 duration-150">
-                  {displayedMembers.map((member) => (
-                    <MemberItem key={member.id} member={member} />
-                  ))}
+                  {isLoadingMembers && members.length === 0 ? (
+                    <div className="flex flex-col gap-2 py-2 px-1">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex items-center gap-3 animate-pulse">
+                          <div className="w-9 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+                          <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                            <div className="w-24 h-3 rounded bg-zinc-200 dark:bg-zinc-800" />
+                            <div className="w-16 h-2 rounded bg-zinc-100 dark:bg-zinc-800/60" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    displayedMembers.map((member) => (
+                      <MemberItem key={member.id} member={member} />
+                    ))
+                  )}
 
-                  {members.length > 4 && (
+                  {!isLoadingMembers && members.length > 4 && (
                     <button
                       type="button"
                       onClick={() => setShowAllMembers(!showAllMembers)}

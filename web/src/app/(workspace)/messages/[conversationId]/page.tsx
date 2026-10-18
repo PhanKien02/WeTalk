@@ -10,6 +10,7 @@ import { ConversationThemeProvider } from "@/features/chat/context/conversation-
 import { useConversationsContext } from "@/features/chat/context/conversations-context";
 import { normalizeConversation } from "@/features/chat/hooks/use-conversations";
 import useGetConversation from "@/features/chat/hooks/use-get-conversation-by-id";
+import useConversationMembers from "@/features/chat/hooks/use-conversation-members";
 
 export default function ConversationPage() {
   const params = useParams();
@@ -45,7 +46,27 @@ export default function ConversationPage() {
 
   const conversation = remoteConversation || cachedConversation;
 
-  // 4. Loading state: only show when we have NO cached conversation to display
+  // 4. Fetch group members if group, or partner profile if 1-1
+  const { members, partner, isLoading: isLoadingMembers } =
+    useConversationMembers(conversation);
+
+  const effectiveConversation = useMemo(() => {
+    if (!conversation) return null;
+    if (!conversation.isGroup && partner) {
+      return {
+        ...conversation,
+        user: {
+          ...conversation.user,
+          ...partner,
+          name: partner.name || conversation.user.name,
+          avatar: partner.avatar || conversation.user.avatar,
+        },
+      };
+    }
+    return conversation;
+  }, [conversation, partner]);
+
+  // 5. Loading state: only show when we have NO cached conversation to display
   if (isLoading && !conversation) {
     return (
       <div className="flex flex-1 h-full items-center justify-center bg-white dark:bg-[#0f111a]">
@@ -56,7 +77,7 @@ export default function ConversationPage() {
     );
   }
 
-  // 5. If loading finished and still no conversation found, trigger notFound
+  // 6. If loading finished and still no conversation found, trigger notFound
   if (!isLoading && !conversation && (isError || (response && !response.data))) {
     notFound();
   }
@@ -65,15 +86,16 @@ export default function ConversationPage() {
     return null;
   }
 
-  const members = conversation.user ? [conversation.user] : [];
+  const activeConversation = effectiveConversation || conversation;
 
   return (
     <ConversationThemeProvider conversationId={conversationId}>
       <div className="flex flex-1 h-full min-w-0 overflow-hidden">
-        <ChatPanel conversation={conversation} initialMessages={[]} />
+        <ChatPanel conversation={activeConversation} initialMessages={[]} />
         <DirectoryPanel
-          conversation={conversation}
+          conversation={activeConversation}
           members={members}
+          isLoadingMembers={isLoadingMembers}
           files={[]}
         />
       </div>
