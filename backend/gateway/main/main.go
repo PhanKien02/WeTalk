@@ -27,6 +27,7 @@ func main() {
 		cfg.AuthServiceURL,
 		cfg.UserServiceURL,
 		cfg.ConversationServiceURL,
+		cfg.MessageServiceURL,
 		cfg.AuthRequiredForUsers,
 	)
 

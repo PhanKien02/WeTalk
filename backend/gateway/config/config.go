@@ -13,6 +13,7 @@ type Config struct {
 	AuthServiceURL         string
 	UserServiceURL         string
 	ConversationServiceURL string
+	MessageServiceURL      string
 	JWTSecret              string
 	AuthRequiredForUsers   bool
 }
@@ -34,6 +35,7 @@ func Init() {
 		AuthServiceURL:         getEnv("AUTH_SERVICE_URL", "http://localhost:8081"),
 		UserServiceURL:         getEnv("USER_SERVICE_URL", "http://localhost:8082"),
 		ConversationServiceURL: getEnv("CONVERSATION_SERVICE_URL", "http://localhost:8083"),
+		MessageServiceURL:      getEnv("MESSAGE_SERVICE_URL", "http://localhost:8084"),
 		JWTSecret:              getEnv("JWT_SECRET", "sadfdsfasdkfnasdfkasldfnasdf8wqe475rq38rfasdfklaadsfasdfas"),
 		AuthRequiredForUsers:   authRequired,
 	}
