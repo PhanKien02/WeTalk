@@ -7,6 +7,7 @@ import (
 	"socket/internal/events"
 	"socket/internal/middleware"
 	"socket/internal/socketio"
+	"socket/rabbitmq"
 	"socket/redis"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +19,11 @@ func main() {
 	}
 	router := gin.Default()
 	ctx := context.Background()
-
+	rabbitMQ, err := rabbitmq.NewRabbitMQService()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rabbitMQ.Close()
 	redis.ConectRedis(ctx)
 	router.Use(middleware.CORSMiddleware())
 	io := socketio.NewServer(socketio.Options{})

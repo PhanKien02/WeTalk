@@ -62,7 +62,6 @@ func Register(io *socketio.Server) {
 				_ = e.Ack("pong")
 			}
 		})
-
 		s.OnDisconnect(func(reason string) {
 			if userID != "" {
 				DeleteSocketId(s.ID(), userID)
