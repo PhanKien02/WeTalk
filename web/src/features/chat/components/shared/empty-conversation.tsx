@@ -7,7 +7,7 @@ export function EmptyConversation() {
   const { t } = useI18n();
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center h-full bg-background dark:bg-[#0f111a] text-center p-8 select-none transition-colors">
+    <div className="flex-1 flex flex-col items-center justify-center h-full bg-background dark:bg-[#0f111a] text-center p-8 select-none transition-colors max-md:hidden">
       <div className="w-16 h-16 rounded-2xl bg-primary-soft dark:bg-primary/20 flex items-center justify-center text-primary mb-4 shadow-sm">
         <MessageSquareDashed className="w-8 h-8 stroke-2" />
       </div>

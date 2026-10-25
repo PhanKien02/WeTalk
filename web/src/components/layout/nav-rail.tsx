@@ -16,6 +16,7 @@ export function NavRail() {
 
   const isMessagesActive = pathname.startsWith("/messages") || pathname === "/";
   const isProfileActive = pathname.startsWith("/profile");
+  const isChattingOnMobile = pathname.startsWith("/messages/") && pathname !== "/messages";
 
   const navItems = [
     {
@@ -32,7 +33,12 @@ export function NavRail() {
   };
 
   return (
-    <aside className="w-21 shrink-0 border-r border-border bg-white dark:bg-[#11131f] flex flex-col items-center py-6 justify-between select-none z-20 transition-colors">
+    <aside
+      className={cn(
+        "w-16 sm:w-18 md:w-21 shrink-0 border-r border-border bg-white dark:bg-[#11131f] flex-col items-center py-4 sm:py-6 justify-between select-none z-20 transition-colors",
+        isChattingOnMobile ? "hidden md:flex" : "flex"
+      )}
+    >
       {/* Top Section: App Logo + Main Nav */}
       <div className="flex flex-col items-center gap-9 w-full">
         <Link href="/messages" className="transition-transform hover:scale-105">

@@ -15,6 +15,8 @@ export function ChatPanel({
   onlineCount,
   onTyping,
   onStopTyping,
+  isDirectoryOpen,
+  onToggleDirectory,
 }: ChatPanelProps) {
   const { user: currentUser } = useAuth();
   const { t } = useI18n();
@@ -40,6 +42,8 @@ export function ChatPanel({
         isGroup={conversation.isGroup}
         memberCount={conversation.memberCount || members?.length}
         onlineCount={onlineCount}
+        isDirectoryOpen={isDirectoryOpen}
+        onToggleDirectory={onToggleDirectory}
       />
       <MessageList
         messages={messages}

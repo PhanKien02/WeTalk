@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -119,11 +119,36 @@ export default function ConversationPage() {
     return null;
   }
 
+  // Tự động tạm ẩn directory khi màn hình nhỏ (< 1280px) cho đến khi bật lại
+  const [isDirectoryCollapsed, setIsDirectoryCollapsed] = useState<boolean>(true);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1280px)");
+    setIsDirectoryCollapsed(!mql.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      // Khi màn hình chuyển sang nhỏ (< 1280px), tự động tạm ẩn
+      if (!e.matches) {
+        setIsDirectoryCollapsed(true);
+      } else {
+        // Khi mở rộng màn hình lớn (>= 1280px), khôi phục hiển thị
+        setIsDirectoryCollapsed(false);
+      }
+    };
+
+    mql.addEventListener("change", handleChange);
+    return () => mql.removeEventListener("change", handleChange);
+  }, []);
+
+  const handleToggleDirectory = useCallback(() => {
+    setIsDirectoryCollapsed((prev) => !prev);
+  }, []);
+
   const activeConversation = effectiveConversation || conversation;
 
   return (
     <ConversationThemeProvider conversationId={conversationId}>
-      <div className="flex flex-1 h-full min-w-0 overflow-hidden">
+      <div className="flex flex-1 h-full min-w-0 overflow-hidden relative">
         <ChatPanel
           conversation={activeConversation}
           members={members}
@@ -131,12 +156,16 @@ export default function ConversationPage() {
           onlineCount={onlineUserIds.size}
           onTyping={notifyTyping}
           onStopTyping={stopTyping}
+          isDirectoryOpen={!isDirectoryCollapsed}
+          onToggleDirectory={handleToggleDirectory}
         />
         <DirectoryPanel
           conversation={activeConversation}
           members={members}
           isLoadingMembers={isLoadingMembers}
           files={[]}
+          isCollapsed={isDirectoryCollapsed}
+          onToggleCollapse={handleToggleDirectory}
         />
       </div>
     </ConversationThemeProvider>

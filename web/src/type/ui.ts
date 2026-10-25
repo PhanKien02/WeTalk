@@ -84,6 +84,8 @@ export interface ChatHeaderProps {
   memberCount?: number;
   /** Số thành viên đang online (chỉ dùng cho nhóm) */
   onlineCount?: number;
+  isDirectoryOpen?: boolean;
+  onToggleDirectory?: () => void;
 }
 
 export interface ChatPanelProps {
@@ -94,6 +96,8 @@ export interface ChatPanelProps {
   onlineCount?: number;
   onTyping?: () => void;
   onStopTyping?: () => void;
+  isDirectoryOpen?: boolean;
+  onToggleDirectory?: () => void;
 }
 
 export interface ConversationSidebarProps {

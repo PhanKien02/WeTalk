@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { Loader2, MessageSquareDashed, Plus } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { useConversationsContext } from "../../context/conversations-context";
 import { ConversationItem } from "./conversation-item";
 import { ConversationSearch } from "./conversation-search";
@@ -80,12 +81,18 @@ export function ConversationSidebar({}: ConversationSidebarProps = {}) {
 
   return (
     <>
-      <div className="w-85 xl:w-90 shrink-0 h-full border-r border-border bg-white dark:bg-[#11131f] flex flex-col select-none transition-colors">
+      <div
+        className={cn(
+          "h-full border-r border-border bg-white dark:bg-[#11131f] flex-col select-none transition-colors",
+          "w-full md:w-76 lg:w-85 xl:w-90 md:shrink-0",
+          activeId ? "hidden md:flex" : "flex"
+        )}
+      >
         {/* Top Header */}
-        <div className="px-6 pt-7 pb-4 flex items-center justify-between">
+        <div className="px-4 sm:px-6 pt-5 sm:pt-7 pb-3 sm:pb-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <button className="flex items-center gap-1.5 text-zinc-900 dark:text-zinc-100 hover:text-primary transition-colors cursor-pointer group">
-              <h1 className="text-[22px] font-bold tracking-tight">
+              <h1 className="text-xl sm:text-[22px] font-bold tracking-tight">
                 {t.messages}
               </h1>
             </button>
@@ -105,14 +112,14 @@ export function ConversationSidebar({}: ConversationSidebarProps = {}) {
         </div>
 
         {/* Search Input Bar */}
-        <div className="px-6 py-2">
+        <div className="px-4 sm:px-6 py-2 shrink-0">
           <ConversationSearch value={searchQuery} onChange={setSearchQuery} />
         </div>
 
         {/* Conversations Scroll Area */}
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-1.5"
+          className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 sm:py-3 flex flex-col gap-1.5"
         >
           {isLoading && conversations.length === 0 ? (
             <ConversationSidebarSkeleton />

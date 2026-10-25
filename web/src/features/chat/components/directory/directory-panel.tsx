@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AtSign,
   Bell,
@@ -74,8 +74,22 @@ export function DirectoryPanel({
   const [isMuted, setIsMuted] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // Trạng thái thu gọn / mở rộng toàn bộ panel
-  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  // Trạng thái thu gọn / mở rộng toàn bộ panel (tự động tạm ẩn khi màn hình nhỏ < 1280px)
+  const [internalCollapsed, setInternalCollapsed] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (isCollapsedProp !== undefined) return;
+    const mql = window.matchMedia("(min-width: 1280px)");
+    setInternalCollapsed(!mql.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setInternalCollapsed(!e.matches);
+    };
+
+    mql.addEventListener("change", handleChange);
+    return () => mql.removeEventListener("change", handleChange);
+  }, [isCollapsedProp]);
+
   const isCollapsed =
     isCollapsedProp !== undefined ? isCollapsedProp : internalCollapsed;
 
@@ -109,7 +123,7 @@ export function DirectoryPanel({
   // Khi đang ở trạng thái thu gọn hoàn toàn
   if (isCollapsed) {
     return (
-      <aside className="w-16 shrink-0 h-full bg-white dark:bg-[#11131f] flex flex-col items-center justify-between border-l border-border dark:border-white/10 select-none py-6 transition-all duration-300">
+      <aside className="w-16 shrink-0 h-full bg-white dark:bg-[#11131f] flex flex-col items-center justify-between border-l border-border dark:border-white/10 select-none py-6 transition-all duration-300 max-lg:hidden">
         <div className="flex flex-col items-center gap-5 w-full">
           {/* Nút mở lại directory */}
           <button
@@ -172,7 +186,21 @@ export function DirectoryPanel({
   }
 
   return (
-    <aside className="w-85 xl:w-90 shrink-0 h-full bg-white dark:bg-[#11131f] flex flex-col border-l border-border dark:border-white/10 select-none overflow-hidden transition-all duration-300">
+    <>
+      {/* Backdrop trên màn hình nhỏ (< 1024px) khi mở directory */}
+      <div
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs lg:hidden animate-in fade-in duration-200"
+        onClick={toggleCollapse}
+        aria-hidden="true"
+      />
+
+      <aside
+        className={cn(
+          "bg-white dark:bg-[#11131f] flex flex-col border-l border-border dark:border-white/10 select-none overflow-hidden transition-all duration-300",
+          "max-lg:fixed max-lg:top-0 max-lg:right-0 max-lg:bottom-0 max-lg:z-50 max-lg:w-85 max-lg:max-w-[85vw] max-lg:shadow-2xl max-lg:animate-in max-lg:slide-in-from-right duration-250",
+          "lg:w-85 xl:w-90 lg:shrink-0 lg:h-full"
+        )}
+      >
       {/* Top Header */}
       <div className="h-21 px-6 flex items-center justify-between border-b border-border dark:border-white/10 shrink-0">
         <div className="flex items-center gap-2">
@@ -792,5 +820,6 @@ export function DirectoryPanel({
       <DefaultEmojiModal />
       <BubblePickerModal />
     </aside>
-  );
+  </>
+);
 }
