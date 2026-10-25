@@ -4,6 +4,7 @@ import (
 	"conversation/internal/dto"
 	models "conversation/internal/model"
 	"conversation/internal/services"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +24,17 @@ type conversationHandle struct {
 
 func NewConversationHandle(service services.ConversationService) ConversationHandle {
 	return &conversationHandle{service: service}
+}
+
+func errorStatus(err error) int {
+	switch {
+	case errors.Is(err, services.ErrNotFound):
+		return http.StatusNotFound
+	case errors.Is(err, services.ErrForbidden):
+		return http.StatusForbidden
+	default:
+		return http.StatusInternalServerError
+	}
 }
 
 func (h *conversationHandle) CreateConversation(c *gin.Context) {
@@ -45,7 +57,7 @@ func (h *conversationHandle) CreateConversation(c *gin.Context) {
 		}
 	}
 
-	result, err := h.service.Create(&conversation)
+	result, err := h.service.Create(c.Request.Context(), &conversation)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -61,17 +73,18 @@ func (h *conversationHandle) UpdateConversation(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.Update(id, &conversation); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	result, err := h.service.Update(c.Request.Context(), c.GetHeader("X-User-Id"), id, &conversation)
+	if err != nil {
+		c.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": conversation})
+	c.JSON(http.StatusOK, gin.H{"data": result})
 }
 
 func (h *conversationHandle) DeleteConversation(c *gin.Context) {
 	id := c.Param("id")
-	if err := h.service.Delete(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := h.service.Delete(c.Request.Context(), c.GetHeader("X-User-Id"), id); err != nil {
+		c.JSON(errorStatus(err), gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Conversation deleted successfully"})

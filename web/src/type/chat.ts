@@ -106,6 +106,31 @@ export interface RawMessage {
   updated_at: string;
 }
 
+/** Vị trí đã đọc của một người trong cuộc hội thoại */
+export interface MessageRead {
+  conversationId: string;
+  userId: string;
+  lastReadMessageId: string;
+  /** created_at của tin nhắn đã đọc cuối cùng */
+  lastReadAt: string;
+}
+
+export interface UnreadCount {
+  conversationId: string;
+  count: number;
+}
+
+export interface TypingEvent {
+  conversationId: string;
+  userId: string;
+  isTyping: boolean;
+}
+
+export interface PresenceEvent {
+  userId: string;
+  online: boolean;
+}
+
 export interface QueryMessagesParams {
   conversationId: string;
   limit?: number;

@@ -15,6 +15,9 @@ type MessageHandle interface {
 	UpdateMessage(c *gin.Context)
 	DeleteMessage(c *gin.Context)
 	FindAll(c *gin.Context)
+	MarkRead(c *gin.Context)
+	FindReads(c *gin.Context)
+	CountUnread(c *gin.Context)
 }
 
 type messageHandle struct {
@@ -119,4 +122,58 @@ func (h *messageHandle) FindAll(c *gin.Context) {
 		return
 	}
 	response.OK(c, messages)
+}
+
+func (h *messageHandle) MarkRead(c *gin.Context) {
+	userId, ok := currentUserId(c)
+	if !ok {
+		return
+	}
+
+	var body dto.MarkReadDto
+	if err := c.ShouldBindJSON(&body); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	read, err := h.service.MarkRead(c.Request.Context(), userId, &body)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	response.OK(c, read)
+}
+
+func (h *messageHandle) FindReads(c *gin.Context) {
+	userId, ok := currentUserId(c)
+	if !ok {
+		return
+	}
+
+	var query dto.GetReadsDto
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	reads, err := h.service.FindReads(c.Request.Context(), userId, query)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	response.OK(c, reads)
+}
+
+func (h *messageHandle) CountUnread(c *gin.Context) {
+	userId, ok := currentUserId(c)
+	if !ok {
+		return
+	}
+
+	counts, err := h.service.CountUnread(c.Request.Context(), userId)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	response.OK(c, counts)
 }

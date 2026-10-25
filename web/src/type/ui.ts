@@ -2,6 +2,7 @@ import type {
   Conversation,
   Message,
   MessageGroup,
+  MessageRead,
   SharedFile,
   Tag,
   User,
@@ -49,10 +50,15 @@ export interface MessageGroupProps {
   otherUser: User;
   myUser?: User;
   onRetry?: (message: Message) => void;
+  /** Người đã xem, đặt dưới tin nhắn cuối cùng họ đã đọc */
+  readersByMessageId?: Map<string, User[]>;
 }
 
 export interface MessageComposerProps {
   onSendMessage: (content: string, images?: string[]) => void;
+  /** Gọi mỗi lần gõ phím; dùng để báo "đang soạn tin" */
+  onTyping?: () => void;
+  onStopTyping?: () => void;
 }
 
 export interface MessageListProps {
@@ -68,15 +74,26 @@ export interface MessageListProps {
   loadError?: string | null;
   onLoadMore?: () => void;
   onRetry?: (message: Message) => void;
+  /** Vị trí đã đọc của từng thành viên, theo userId */
+  reads?: Record<string, MessageRead>;
 }
 
 export interface ChatHeaderProps {
   user: User;
+  isGroup?: boolean;
+  memberCount?: number;
+  /** Số thành viên đang online (chỉ dùng cho nhóm) */
+  onlineCount?: number;
 }
 
 export interface ChatPanelProps {
   conversation: Conversation;
   members?: User[];
+  /** Thành viên đang soạn tin, không gồm mình */
+  typingUsers?: User[];
+  onlineCount?: number;
+  onTyping?: () => void;
+  onStopTyping?: () => void;
 }
 
 export interface ConversationSidebarProps {

@@ -13,5 +13,5 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, rabbitmq rabbitmq.RabbitMQService) 
 			"message": "pong",
 		})
 	})
-	AuthRoutes(r.Group("/api/v1/conersation"), db)
+	AuthRoutes(r.Group("/api/v1/conersation"), db, rabbitmq)
 }

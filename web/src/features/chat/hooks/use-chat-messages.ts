@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useAuth } from "@/lib/auth";
 import { SOCKET_EVENTS, useSocket } from "@/lib/socket";
 import { messageService } from "@/services/message.service";
-import type { Conversation, Message, RawMessage } from "@/type";
+import type { Conversation, Message, MessageRead, RawMessage } from "@/type";
 import { useConversationsContext } from "../context/conversations-context";
 import {
   formatMessageTime,
@@ -32,6 +32,10 @@ function errorMessage(err: unknown, fallback: string) {
   return message || fallback;
 }
 
+function isNewerRead(read: MessageRead, current?: MessageRead) {
+  return !current || Date.parse(read.lastReadAt) > Date.parse(current.lastReadAt);
+}
+
 function newClientId() {
   return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -41,7 +45,7 @@ export function useChatMessages(conversation: Conversation) {
   const { user: currentUser } = useAuth();
   const currentUserId = currentUser?.id;
   const { socket } = useSocket();
-  const { applyMessage } = useConversationsContext();
+  const { applyMessage, markConversationRead } = useConversationsContext();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [hasMore, setHasMore] = useState(false);
@@ -50,6 +54,8 @@ export function useChatMessages(conversation: Conversation) {
   // Conversation đã tải xong trang đầu; khác conversationId nghĩa là đang tải
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [prevConversationId, setPrevConversationId] = useState(conversationId);
+  // Vị trí đã đọc của từng thành viên, theo userId
+  const [reads, setReads] = useState<Record<string, MessageRead>>({});
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const pendingScroll = useRef<PendingScroll | null>(null);
@@ -60,6 +66,7 @@ export function useChatMessages(conversation: Conversation) {
     setMessages([]);
     setHasMore(false);
     setLoadError(null);
+    setReads({});
   }
 
   // Cuộn sau khi DOM đã có tin nhắn mới, trước khi trình duyệt vẽ
@@ -111,6 +118,52 @@ export function useChatMessages(conversation: Conversation) {
       });
     return () => controller.abort();
   }, [conversationId, fetchLatest]);
+
+  // 1b. Ai đã xem tới đâu
+  useEffect(() => {
+    let cancelled = false;
+    messageService
+      .getReads(conversationId)
+      .then((res) => {
+        if (cancelled) return;
+        const byUser: Record<string, MessageRead> = {};
+        for (const read of res.data ?? []) byUser[read.userId] = read;
+        setReads(byUser);
+      })
+      .catch((err) => console.warn("Không tải được trạng thái đã xem:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId]);
+
+  // 1c. Đánh dấu đã đọc tin mới nhất của người khác, khi tab đang hiển thị
+  const lastMarkedRef = useRef<string | null>(null);
+  useEffect(() => {
+    let latest: Message | undefined;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (!m.isOwn && m.createdAt) {
+        latest = m;
+        break;
+      }
+    }
+
+    const mark = () => {
+      if (document.visibilityState !== "visible") return;
+      markConversationRead(conversationId);
+      if (!latest || lastMarkedRef.current === latest.id) return;
+      const messageId = latest.id;
+      lastMarkedRef.current = messageId;
+      messageService.markRead(conversationId, messageId).catch((err) => {
+        lastMarkedRef.current = null;
+        console.warn("Không đánh dấu đã đọc được:", err);
+      });
+    };
+
+    mark();
+    document.addEventListener("visibilitychange", mark);
+    return () => document.removeEventListener("visibilitychange", mark);
+  }, [messages, conversationId, markConversationRead]);
 
   // 2. Tin nhắn cũ hơn (khi cuộn lên đầu)
   const loadMore = useCallback(async () => {
@@ -176,6 +229,15 @@ export function useChatMessages(conversation: Conversation) {
       setMessages((current) => current.filter((m) => m.id !== raw.id));
     };
 
+    const onRead = (read: MessageRead) => {
+      if (read.conversationId !== conversationId) return;
+      setReads((current) =>
+        isNewerRead(read, current[read.userId])
+          ? { ...current, [read.userId]: read }
+          : current
+      );
+    };
+
     // Bù các tin nhắn bị lỡ trong lúc socket mất kết nối
     const onConnect = () => {
       fetchLatest()
@@ -186,8 +248,10 @@ export function useChatMessages(conversation: Conversation) {
     socket.on(SOCKET_EVENTS.MESSAGE_CREATED, onCreated);
     socket.on(SOCKET_EVENTS.MESSAGE_UPDATED, onUpdated);
     socket.on(SOCKET_EVENTS.MESSAGE_DELETED, onDeleted);
+    socket.on(SOCKET_EVENTS.MESSAGE_READ, onRead);
     socket.on("connect", onConnect);
     return () => {
+      socket.off(SOCKET_EVENTS.MESSAGE_READ, onRead);
       socket.off(SOCKET_EVENTS.MESSAGE_CREATED, onCreated);
       socket.off(SOCKET_EVENTS.MESSAGE_UPDATED, onUpdated);
       socket.off(SOCKET_EVENTS.MESSAGE_DELETED, onDeleted);
@@ -281,6 +345,7 @@ export function useChatMessages(conversation: Conversation) {
     isLoading: loadedFor !== conversationId,
     isLoadingMore,
     loadError,
+    reads,
     scrollRef,
   };
 }

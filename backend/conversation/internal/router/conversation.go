@@ -4,14 +4,15 @@ import (
 	"conversation/internal/handler"
 	"conversation/internal/repository"
 	"conversation/internal/services"
+	"conversation/rabbitmq"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-func AuthRoutes(r *gin.RouterGroup, db *gorm.DB) {
+func AuthRoutes(r *gin.RouterGroup, db *gorm.DB, rabbitMQ rabbitmq.RabbitMQService) {
 	authRepo := repository.NewConversationRepository(db)
-	service := services.NewConversationService(authRepo)
+	service := services.NewConversationService(authRepo, rabbitMQ)
 	handler := handler.NewConversationHandle(service)
 
 	r.POST("/", handler.CreateConversation)

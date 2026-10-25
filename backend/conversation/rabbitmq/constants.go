@@ -4,6 +4,8 @@ package rabbitmq
 const (
 	ExchangeUser    = "user.exchange"
 	ExchangeMessage = "message.exchange"
+
+	ExchangeConversation = "conversation.exchange"
 )
 
 // Queues
@@ -19,6 +21,10 @@ const (
 	RoutingKeyUserCreated = "user.created"
 
 	RoutingKeyMessageCreated = "message.created"
+
+	RoutingKeyConversationCreated = "conversation.created"
+	RoutingKeyConversationUpdated = "conversation.updated"
+	RoutingKeyConversationDeleted = "conversation.deleted"
 )
 
 // QueueBinding represents a binding rule between exchange and queue

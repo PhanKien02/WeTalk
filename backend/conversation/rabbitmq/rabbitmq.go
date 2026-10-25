@@ -37,10 +37,9 @@ func NewRabbitMQService() (RabbitMQService, error) {
 	}, nil
 }
 
-func (r *rabbitMQService) Publish(ctx context.Context, queue string, message any) error {
-	_, err := r.channel.QueueDeclare(queue, true, false, false, false, nil)
-	if err != nil {
-		r.logger.Error("failed to declare queue")
+func (r *rabbitMQService) Publish(ctx context.Context, exchange, routingKey string, message any) error {
+	if err := r.channel.ExchangeDeclare(exchange, "topic", true, false, false, false, nil); err != nil {
+		r.logger.Error("failed to declare exchange %s: %v", exchange, err)
 		return err
 	}
 
@@ -50,17 +49,10 @@ func (r *rabbitMQService) Publish(ctx context.Context, queue string, message any
 		return err
 	}
 
-	err = r.channel.PublishWithContext(ctx, "", queue, false, false, amqp091.Publishing{
-		ContentType: "text/plain",
-		Body:        []byte(body),
+	return r.channel.PublishWithContext(ctx, exchange, routingKey, false, false, amqp091.Publishing{
+		ContentType: "application/json",
+		Body:        body,
 	})
-
-	if err != nil {
-		r.logger.Error("failed to publish message")
-		return err
-	}
-
-	return nil
 }
 
 func (r *rabbitMQService) BindQueue(queue, routingKey, exchange string) error {

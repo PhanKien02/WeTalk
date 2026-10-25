@@ -3,7 +3,7 @@ package rabbitmq
 import "context"
 
 type RabbitMQService interface {
-	Publish(ctx context.Context, queue string, message any) error
+	Publish(ctx context.Context, exchange, routingKey string, message any) error
 	SetupBindings(bindings []QueueBinding) error
 	InitBindings() error
 	BindQueue(queue, routingKey, exchange string) error

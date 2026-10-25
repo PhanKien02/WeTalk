@@ -11,6 +11,8 @@ import { useConversationsContext } from "@/features/chat/context/conversations-c
 import { normalizeConversation } from "@/features/chat/hooks/use-conversations";
 import useGetConversation from "@/features/chat/hooks/use-get-conversation-by-id";
 import useConversationMembers from "@/features/chat/hooks/use-conversation-members";
+import { useConversationRoom } from "@/features/chat/hooks/use-conversation-room";
+import type { User } from "@/type";
 
 export default function ConversationPage() {
   const params = useParams();
@@ -47,26 +49,57 @@ export default function ConversationPage() {
   const conversation = remoteConversation || cachedConversation;
 
   // 4. Fetch group members if group, or partner profile if 1-1
-  const { members, partner, isLoading: isLoadingMembers } =
+  const { members: fetchedMembers, partner, isLoading: isLoadingMembers } =
     useConversationMembers(conversation);
+
+  // 5. Room realtime: online và "đang soạn tin"
+  const { onlineUserIds, typingUserIds, notifyTyping, stopTyping } =
+    useConversationRoom(conversationId);
+
+  const members = useMemo(
+    () =>
+      fetchedMembers.map((member) => ({
+        ...member,
+        status: onlineUserIds.has(member.id) ? ("online" as const) : ("offline" as const),
+      })),
+    [fetchedMembers, onlineUserIds]
+  );
 
   const effectiveConversation = useMemo(() => {
     if (!conversation) return null;
-    if (!conversation.isGroup && partner) {
+    if (!conversation.isGroup) {
+      const user = partner
+        ? {
+            ...conversation.user,
+            ...partner,
+            name: partner.name || conversation.user.name,
+            avatar: partner.avatar || conversation.user.avatar,
+          }
+        : conversation.user;
       return {
         ...conversation,
         user: {
-          ...conversation.user,
-          ...partner,
-          name: partner.name || conversation.user.name,
-          avatar: partner.avatar || conversation.user.avatar,
+          ...user,
+          status: onlineUserIds.has(user.id) ? ("online" as const) : ("offline" as const),
         },
       };
     }
     return conversation;
-  }, [conversation, partner]);
+  }, [conversation, partner, onlineUserIds]);
 
-  // 5. Loading state: only show when we have NO cached conversation to display
+  const typingUsers = useMemo(
+    () =>
+      typingUserIds
+        .map(
+          (id): User | undefined =>
+            members.find((member) => member.id === id) ??
+            (effectiveConversation?.user.id === id ? effectiveConversation.user : undefined)
+        )
+        .filter((user): user is User => Boolean(user)),
+    [typingUserIds, members, effectiveConversation]
+  );
+
+  // 6. Loading state: only show when we have NO cached conversation to display
   if (isLoading && !conversation) {
     return (
       <div className="flex flex-1 h-full items-center justify-center bg-white dark:bg-[#0f111a]">
@@ -77,7 +110,7 @@ export default function ConversationPage() {
     );
   }
 
-  // 6. If loading finished and still no conversation found, trigger notFound
+  // 7. If loading finished and still no conversation found, trigger notFound
   if (!isLoading && !conversation && (isError || (response && !response.data))) {
     notFound();
   }
@@ -91,7 +124,14 @@ export default function ConversationPage() {
   return (
     <ConversationThemeProvider conversationId={conversationId}>
       <div className="flex flex-1 h-full min-w-0 overflow-hidden">
-        <ChatPanel conversation={activeConversation} members={members} />
+        <ChatPanel
+          conversation={activeConversation}
+          members={members}
+          typingUsers={typingUsers}
+          onlineCount={onlineUserIds.size}
+          onTyping={notifyTyping}
+          onStopTyping={stopTyping}
+        />
         <DirectoryPanel
           conversation={activeConversation}
           members={members}

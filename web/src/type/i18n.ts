@@ -19,6 +19,9 @@ export interface Translations {
   teamMembers: string;
   files: string;
   typeMessage: string;
+  typingOne: string;
+  typingMany: string;
+  seenBy: string;
   send: string;
   settings: string;
   home: string;

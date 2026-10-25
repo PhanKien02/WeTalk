@@ -12,6 +12,7 @@ export const ConversationItem = memo(function ConversationItem({
   isActive,
 }: ConversationItemProps) {
   const { user, lastMessage, timestamp, tags } = conversation;
+  const unreadCount = conversation.unreadCount ?? 0;
 
   return (
     <Link
@@ -53,9 +54,23 @@ export const ConversationItem = memo(function ConversationItem({
         </div>
 
         {/* Nội dung tin nhắn cuối */}
-        <p className="text-[13px] text-zinc-500 truncate leading-snug">
-          {lastMessage}
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p
+            className={cn(
+              "text-[13px] truncate leading-snug",
+              unreadCount > 0
+                ? "text-zinc-900 dark:text-zinc-100 font-semibold"
+                : "text-zinc-500"
+            )}
+          >
+            {lastMessage}
+          </p>
+          {unreadCount > 0 && (
+            <span className="min-w-5 h-5 px-1.5 shrink-0 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </div>
 
         {/* Tags nhãn */}
         {tags && tags.length > 0 ? (

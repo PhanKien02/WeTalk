@@ -36,7 +36,7 @@ func main() {
 		log.Fatalf("failed to start consumer: %v", err)
 	}
 
-	service := services.NewConversationService(repo)
+	service := services.NewConversationService(repo, rabbitMQ)
 	handler := handle.NewConversationHandle(service)
 
 	router := gin.Default()

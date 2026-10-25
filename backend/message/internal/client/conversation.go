@@ -26,6 +26,7 @@ func (c *Conversation) HasMember(userId string) bool {
 // gateway), forwarding X-User-Id the same way the gateway would.
 type ConversationClient interface {
 	FindById(ctx context.Context, id, userId string) (*Conversation, error)
+	FindAllIds(ctx context.Context, userId string) ([]string, error)
 }
 
 type conversationClient struct {
@@ -66,4 +67,36 @@ func (c *conversationClient) FindById(ctx context.Context, id, userId string) (*
 		return nil, err
 	}
 	return &body.Data, nil
+}
+
+// FindAllIds returns the ids of every conversation userId belongs to.
+func (c *conversationClient) FindAllIds(ctx context.Context, userId string) ([]string, error) {
+	url := fmt.Sprintf("%s/api/v1/conversations", c.baseURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-User-Id", userId)
+
+	res, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("conversation service returned %d", res.StatusCode)
+	}
+
+	var body struct {
+		Data []Conversation `json:"data"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(body.Data))
+	for _, conversation := range body.Data {
+		ids = append(ids, conversation.Id)
+	}
+	return ids, nil
 }

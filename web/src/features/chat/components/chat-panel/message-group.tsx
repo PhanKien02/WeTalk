@@ -1,8 +1,32 @@
 import { UserAvatar } from "../shared/user-avatar";
 import { MessageBubble } from "./message-bubble";
-import type { MessageGroupProps } from "@/type";
+import { useI18n } from "@/lib/i18n";
+import type { MessageGroupProps, User } from "@/type";
 
-export function MessageGroup({ group, otherUser, myUser, onRetry }: MessageGroupProps) {
+function SeenBy({ readers, label }: { readers?: User[]; label: string }) {
+  if (!readers?.length) return null;
+  return (
+    <div
+      className="flex items-center -space-x-1 px-1 pt-0.5"
+      title={`${label}: ${readers.map((reader) => reader.name).join(", ")}`}
+    >
+      {readers.map((reader) => (
+        <UserAvatar
+          key={reader.id}
+          src={reader.avatar}
+          name={reader.name}
+          size="sm"
+          shape="circle"
+          showStatus={false}
+          className="w-4 h-4 text-[8px] ring-2 ring-white dark:ring-[#0f111a] rounded-full overflow-hidden"
+        />
+      ))}
+    </div>
+  );
+}
+
+export function MessageGroup({ group, otherUser, myUser, onRetry, readersByMessageId }: MessageGroupProps) {
+  const { t } = useI18n();
   const { isOwn, messages } = group;
 
   const user = isOwn
@@ -62,6 +86,7 @@ export function MessageGroup({ group, otherUser, myUser, onRetry }: MessageGroup
                 )}
               </span>
             )}
+            <SeenBy readers={readersByMessageId?.get(message.id)} label={t.seenBy} />
           </div>
         ))}
       </div>

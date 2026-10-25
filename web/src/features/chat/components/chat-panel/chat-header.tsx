@@ -4,7 +4,9 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { UserAvatar } from "../shared/user-avatar";
 import type { ChatHeaderProps } from "@/type";
 
-export function ChatHeader({ user }: ChatHeaderProps) {
+export function ChatHeader({ user, isGroup, memberCount, onlineCount }: ChatHeaderProps) {
+  const isOnline = isGroup ? (onlineCount ?? 0) > 0 : user.status === "online";
+
   const { t } = useI18n();
 
   return (
@@ -26,11 +28,15 @@ export function ChatHeader({ user }: ChatHeaderProps) {
           <div className="flex items-center gap-1.5 mt-0.5">
             <span
               className={`w-2 h-2 rounded-full ${
-                user.status === "online" ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-600"
+                isOnline ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-600"
               }`}
             />
             <span className="text-[12px] font-medium text-zinc-500 dark:text-zinc-400">
-              {user.status === "online" ? t.online : t.offline}
+              {isGroup
+                ? `${onlineCount ?? 0}/${memberCount ?? 0} ${t.online.toLowerCase()}`
+                : isOnline
+                  ? t.online
+                  : t.offline}
             </span>
           </div>
         </div>

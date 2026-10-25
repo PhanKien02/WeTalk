@@ -2,8 +2,10 @@ import baseRequest from "./base.service";
 import type {
   ApiResponse,
   CreateMessagePayload,
+  MessageRead,
   QueryMessagesParams,
   RawMessage,
+  UnreadCount,
 } from "@/type";
 
 export const messageService = {
@@ -36,6 +38,34 @@ export const messageService = {
     const response = await baseRequest.put<ApiResponse<RawMessage>>(
       `/v1/messages/${id}`,
       { content }
+    );
+    return response.data;
+  },
+
+  /** Đánh dấu đã đọc tới messageId; vị trí đọc chỉ tiến lên, không lùi */
+  async markRead(
+    conversationId: string,
+    messageId: string
+  ): Promise<ApiResponse<MessageRead>> {
+    const response = await baseRequest.post<ApiResponse<MessageRead>>(
+      "/v1/messages/read",
+      { conversationId, messageId }
+    );
+    return response.data;
+  },
+
+  async getReads(conversationId: string): Promise<ApiResponse<MessageRead[]>> {
+    const response = await baseRequest.get<ApiResponse<MessageRead[]>>(
+      "/v1/messages/reads",
+      { params: { conversationId } }
+    );
+    return response.data;
+  },
+
+  /** Số tin chưa đọc của mọi cuộc hội thoại có tin chưa đọc */
+  async getUnreadCounts(): Promise<ApiResponse<UnreadCount[]>> {
+    const response = await baseRequest.get<ApiResponse<UnreadCount[]>>(
+      "/v1/messages/unread"
     );
     return response.data;
   },

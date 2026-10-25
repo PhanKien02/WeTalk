@@ -24,6 +24,26 @@ type GetMessagesDto struct {
 	Limit          int        `form:"limit" binding:"omitempty,min=1,max=100"`
 }
 
+type MarkReadDto struct {
+	ConversationId string `json:"conversationId" binding:"required,uuid"`
+	MessageId      string `json:"messageId" binding:"required,uuid"`
+}
+
+type GetReadsDto struct {
+	ConversationId string `form:"conversationId" binding:"required,uuid"`
+}
+
+type UnreadCount struct {
+	ConversationId string `json:"conversationId"`
+	Count          int64  `json:"count"`
+}
+
+// ReadEvent is published to message.exchange when a user's read position moves.
+type ReadEvent struct {
+	Read      *models.MessageRead `json:"read"`
+	MemberIds []string            `json:"memberIds"`
+}
+
 // MessageEvent is published to message.exchange for realtime consumers.
 // MemberIds lets the consumer fan out to user:<id> rooms without another lookup.
 type MessageEvent struct {

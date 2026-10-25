@@ -11,7 +11,8 @@ export function MemberItem({ member }: MemberItemProps) {
         name={member.name}
         size="md"
         shape="rounded"
-        showStatus={false}
+        showStatus={Boolean(member.status)}
+        status={member.status}
         className="rounded-xl overflow-hidden shrink-0"
       />
       <div className="flex flex-col min-w-0">

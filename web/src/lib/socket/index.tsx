@@ -7,11 +7,22 @@ import { getCookie } from "@/utils/cookies";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "ws://localhost:9000";
 
-/** Event do socket service phát tới room user:<id> của từng thành viên */
+/** Tên event, giữ khớp với backend/socket/internal/events/names.go */
 export const SOCKET_EVENTS = {
+  // Server → client, phát tới room user:<id> của từng thành viên
   MESSAGE_CREATED: "message:created",
   MESSAGE_UPDATED: "message:updated",
   MESSAGE_DELETED: "message:deleted",
+  MESSAGE_READ: "message:read",
+  CONVERSATION_CREATED: "conversation:created",
+  CONVERSATION_UPDATED: "conversation:updated",
+  CONVERSATION_DELETED: "conversation:deleted",
+  // Server → client, chỉ cho socket đã join cuộc hội thoại
+  TYPING: "typing",
+  PRESENCE: "presence",
+  // Client → server
+  CONVERSATION_JOIN: "conversation:join",
+  CONVERSATION_LEAVE: "conversation:leave",
 } as const;
 
 type SocketContextType = {

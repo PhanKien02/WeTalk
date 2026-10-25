@@ -50,6 +50,9 @@ func main() {
 	{
 		api.GET("", handler.FindAll)
 		api.POST("", handler.CreateMessage)
+		api.GET("/reads", handler.FindReads)
+		api.POST("/read", handler.MarkRead)
+		api.GET("/unread", handler.CountUnread)
 		api.PUT("/:id", handler.UpdateMessage)
 		api.DELETE("/:id", handler.DeleteMessage)
 	}

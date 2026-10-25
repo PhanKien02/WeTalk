@@ -15,7 +15,7 @@ interface PendingImage {
   name: string;
 }
 
-export function MessageComposer({ onSendMessage }: MessageComposerProps) {
+export function MessageComposer({ onSendMessage, onTyping, onStopTyping }: MessageComposerProps) {
   const { t } = useI18n();
   const { theme, setIsEmojiPickerOpen } = useConversationTheme();
   const { openLightbox } = useImageLightbox();
@@ -65,6 +65,7 @@ export function MessageComposer({ onSendMessage }: MessageComposerProps) {
     );
     setContent("");
     setPendingImages([]);
+    onStopTyping?.();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -168,7 +169,11 @@ export function MessageComposer({ onSendMessage }: MessageComposerProps) {
           <input
             type="text"
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value);
+              if (e.target.value.trim()) onTyping?.();
+              else onStopTyping?.();
+            }}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             placeholder={t.typeMessage}

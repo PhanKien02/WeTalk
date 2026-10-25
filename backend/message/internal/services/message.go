@@ -31,6 +31,9 @@ type MessageService interface {
 	Update(ctx context.Context, userId, id string, body *dto.UpdateMessageDto) (*models.Message, error)
 	Delete(ctx context.Context, userId, id string) error
 	FindAll(ctx context.Context, userId string, query dto.GetMessagesDto) ([]models.Message, error)
+	MarkRead(ctx context.Context, userId string, body *dto.MarkReadDto) (*models.MessageRead, error)
+	FindReads(ctx context.Context, userId string, query dto.GetReadsDto) ([]models.MessageRead, error)
+	CountUnread(ctx context.Context, userId string) ([]dto.UnreadCount, error)
 }
 
 type messageService struct {
@@ -189,4 +192,58 @@ func (s *messageService) FindAll(ctx context.Context, userId string, query dto.G
 		query.Limit = defaultLimit
 	}
 	return s.repo.FindAll(query)
+}
+
+func (s *messageService) MarkRead(ctx context.Context, userId string, body *dto.MarkReadDto) (*models.MessageRead, error) {
+	conversation, err := s.memberConversation(ctx, body.ConversationId, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	message, err := s.repo.FindById(body.MessageId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if message.ConversationId.String() != body.ConversationId {
+		return nil, ErrNotFound
+	}
+
+	read := models.MessageRead{
+		ConversationId:    message.ConversationId,
+		UserId:            uuid.MustParse(userId),
+		LastReadMessageId: message.Id,
+		LastReadAt:        message.CreatedAt,
+		UpdatedAt:         time.Now().UTC(),
+	}
+	changed, err := s.repo.UpsertRead(&read)
+	if err != nil {
+		return nil, err
+	}
+
+	// Reading an older message than the stored position changes nothing to announce.
+	if changed {
+		event := dto.ReadEvent{Read: &read, MemberIds: conversation.MemberIds}
+		if err := s.rabbitmq.Publish(ctx, rabbitmq.ExchangeMessage, rabbitmq.RoutingKeyMessageRead, event); err != nil {
+			s.logger.Error("failed to publish %s for conversation %s: %v", rabbitmq.RoutingKeyMessageRead, read.ConversationId, err)
+		}
+	}
+	return &read, nil
+}
+
+func (s *messageService) FindReads(ctx context.Context, userId string, query dto.GetReadsDto) ([]models.MessageRead, error) {
+	if _, err := s.memberConversation(ctx, query.ConversationId, userId); err != nil {
+		return nil, err
+	}
+	return s.repo.FindReads(query.ConversationId)
+}
+
+func (s *messageService) CountUnread(ctx context.Context, userId string) ([]dto.UnreadCount, error) {
+	conversationIds, err := s.conversations.FindAllIds(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.CountUnread(userId, conversationIds)
 }

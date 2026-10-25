@@ -11,6 +11,8 @@ type Config struct {
 	Port        string
 	JWT_SECRET  string
 	RabbitMQURL string
+
+	ConversationServiceURL string
 }
 
 var AppConfig Config
@@ -27,6 +29,8 @@ func Init() error {
 		Port:        getEnvOrPanic("PORT"),
 		JWT_SECRET:  getEnvOrPanic("JWT_SECRET"),
 		RabbitMQURL: getEnvOrPanic("RABBITMQ_URL"),
+
+		ConversationServiceURL: getEnvOrPanic("CONVERSATION_SERVICE_URL"),
 	}
 
 	return nil

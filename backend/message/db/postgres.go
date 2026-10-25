@@ -32,7 +32,7 @@ func ConnectDB() *gorm.DB {
 		return nil
 	}
 
-	if err := db.AutoMigrate(&models.Message{}); err != nil {
+	if err := db.AutoMigrate(&models.Message{}, &models.MessageRead{}); err != nil {
 		log.Error(err.Error())
 		return nil
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"socket/internal/client"
 	"socket/internal/socketio"
 	"socket/redis"
 )
@@ -45,7 +46,7 @@ func DeleteSocketId(socketId, userId string) {
 	}
 }
 
-func Register(io *socketio.Server) {
+func Register(io *socketio.Server, conversations client.ConversationClient) {
 	io.OnConnection(func(s *socketio.Socket) {
 		userID := UserID(s)
 		log.Printf("socket connected: id=%s user=%s", s.ID(), userID)
@@ -54,7 +55,13 @@ func Register(io *socketio.Server) {
 		if userID != "" {
 			SaveSocketId(s.ID(), userID)
 			s.Join(UserRoom(userID))
+			// The first socket of a user brings them online.
+			if socketCount(userID) == 1 {
+				emitPresence(io, userID, true)
+			}
 		}
+
+		registerConversationRoom(s, userID, conversations)
 
 		// Latency check: socket.emit("ping", (res) => ...)
 		s.On("ping", func(e *socketio.Event) {
@@ -65,6 +72,9 @@ func Register(io *socketio.Server) {
 		s.OnDisconnect(func(reason string) {
 			if userID != "" {
 				DeleteSocketId(s.ID(), userID)
+				if socketCount(userID) == 0 {
+					emitPresence(io, userID, false)
+				}
 			}
 			log.Printf("socket disconnected: id=%s user=%s reason=%s", s.ID(), userID, reason)
 		})

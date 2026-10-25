@@ -10,6 +10,7 @@ const (
 	RoutingKeyMessageCreated = "message.created"
 	RoutingKeyMessageUpdated = "message.updated"
 	RoutingKeyMessageDeleted = "message.deleted"
+	RoutingKeyMessageRead    = "message.read"
 )
 
 // QueueBinding represents a binding rule between exchange and queue
