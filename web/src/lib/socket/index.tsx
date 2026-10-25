@@ -7,6 +7,13 @@ import { getCookie } from "@/utils/cookies";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "ws://localhost:9000";
 
+/** Event do socket service phát tới room user:<id> của từng thành viên */
+export const SOCKET_EVENTS = {
+  MESSAGE_CREATED: "message:created",
+  MESSAGE_UPDATED: "message:updated",
+  MESSAGE_DELETED: "message:deleted",
+} as const;
+
 type SocketContextType = {
   socket: Socket | null;
   isConnected: boolean;

@@ -91,7 +91,7 @@ export default function ConversationPage() {
   return (
     <ConversationThemeProvider conversationId={conversationId}>
       <div className="flex flex-1 h-full min-w-0 overflow-hidden">
-        <ChatPanel conversation={activeConversation} initialMessages={[]} />
+        <ChatPanel conversation={activeConversation} members={members} />
         <DirectoryPanel
           conversation={activeConversation}
           members={members}

@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"conversation/config"
 	"conversation/db"
 	handle "conversation/internal/handler"
 	"conversation/internal/repository"
 	"conversation/internal/services"
+	"conversation/rabbitmq"
+	"conversation/rabbitmq/consumer"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -22,6 +25,17 @@ func main() {
 	}
 
 	repo := repository.NewConversationRepository(database)
+
+	rabbitMQ, err := rabbitmq.NewRabbitMQService()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rabbitMQ.Close()
+
+	if err := consumer.StartConsumer(context.Background(), rabbitMQ, repo); err != nil {
+		log.Fatalf("failed to start consumer: %v", err)
+	}
+
 	service := services.NewConversationService(repo)
 	handler := handle.NewConversationHandle(service)
 

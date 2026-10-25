@@ -9,6 +9,7 @@ type CreateMessageDto struct {
 	ConversationId string   `json:"conversationId" binding:"required,uuid"`
 	Content        string   `json:"content" binding:"max=5000"`
 	Images         []string `json:"images" binding:"omitempty,max=10,dive,url"`
+	ClientId       string   `json:"clientId" binding:"omitempty,max=64"`
 }
 
 type UpdateMessageDto struct {

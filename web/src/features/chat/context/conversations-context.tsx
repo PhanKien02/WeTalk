@@ -5,15 +5,19 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
-import type { Conversation, RawConversation } from "@/type";
+import { SOCKET_EVENTS, useSocket } from "@/lib/socket";
+import type { Conversation, RawConversation, RawMessage } from "@/type";
 import {
+  formatConversationTimestamp,
   normalizeConversation,
   useGetConversations,
 } from "../hooks/use-conversations";
+import { messagePreview } from "../lib/message";
 
 const PAGE_SIZE = 15;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -31,6 +35,8 @@ export interface ConversationsContextType {
   refetch: () => void;
   addOrUpdateConversation: (conv: Conversation) => void;
   replaceConversationId: (oldId: string, updated: Conversation) => void;
+  /** Cập nhật tin nhắn cuối và đưa cuộc hội thoại lên đầu danh sách */
+  applyMessage: (message: RawMessage) => void;
 }
 
 const ConversationsContext = createContext<ConversationsContextType | null>(null);
@@ -194,6 +200,50 @@ function ConversationsStateProvider({
     [],
   );
 
+  const applyMessage = useCallback((message: RawMessage) => {
+    setConversations((current) => {
+      const index = current.findIndex(
+        (item) => item.id === message.conversationId,
+      );
+      if (index === -1) return current;
+
+      const conversation = current[index];
+      const updated: Conversation = {
+        ...conversation,
+        lastMessage: messagePreview(message) || conversation.lastMessage,
+        timestamp: formatConversationTimestamp(message.created_at),
+        updated_at: message.created_at,
+      };
+      return [updated, ...current.filter((_, i) => i !== index)];
+    });
+  }, []);
+
+  // Tin nhắn realtime: cập nhật sidebar. Nếu là cuộc hội thoại mới (người khác
+  // vừa nhắn cho mình lần đầu) thì tải lại danh sách để lấy nó về.
+  const { socket } = useSocket();
+  const conversationsRef = useRef(conversations);
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const onMessageCreated = (message: RawMessage) => {
+      const known = conversationsRef.current.some(
+        (item) => item.id === message.conversationId,
+      );
+      if (known) {
+        applyMessage(message);
+      } else {
+        refetch();
+      }
+    };
+    socket.on(SOCKET_EVENTS.MESSAGE_CREATED, onMessageCreated);
+    return () => {
+      socket.off(SOCKET_EVENTS.MESSAGE_CREATED, onMessageCreated);
+    };
+  }, [socket, applyMessage, refetch]);
+
   const conversationsState: ConversationsContextType = {
     conversations,
     searchQuery,
@@ -206,6 +256,7 @@ function ConversationsStateProvider({
     refetch,
     addOrUpdateConversation,
     replaceConversationId,
+    applyMessage,
   };
 
   return (

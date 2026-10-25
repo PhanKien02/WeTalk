@@ -23,4 +23,8 @@ type Message struct {
 	CreatedAt      time.Time      `json:"created_at" gorm:"type:timestamp;default:CURRENT_TIMESTAMP;index:idx_messages_conversation_created,priority:2"`
 	UpdatedAt      time.Time      `json:"updated_at" gorm:"type:timestamp;default:CURRENT_TIMESTAMP"`
 	DeletedAt      gorm.DeletedAt `json:"-" gorm:"index"`
+
+	// ClientId is the sender's temporary id, echoed back (not stored) so the
+	// client can match its optimistic message with the response and the socket event.
+	ClientId string `gorm:"-" json:"clientId,omitempty"`
 }

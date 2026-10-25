@@ -82,6 +82,42 @@ export interface Message {
   isOwn: boolean;
   /** Ảnh đính kèm (URL hoặc object URL) */
   images?: string[];
+  conversationId?: string;
+  /** ID tạm của tin nhắn optimistic, dùng để khớp với response và socket event */
+  clientId?: string;
+  isEdited?: boolean;
+  createdAt?: string;
+  /** Chỉ có ở client: "sending" khi đang gửi, "failed" khi gửi lỗi */
+  status?: "sending" | "failed";
+  /** Lý do gửi lỗi, hiển thị dưới bong bóng */
+  error?: string;
+}
+
+export interface RawMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  type: "text" | "image";
+  content: string;
+  images: string[] | null;
+  isEdited: boolean;
+  clientId?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QueryMessagesParams {
+  conversationId: string;
+  limit?: number;
+  /** ISO time: chỉ lấy tin nhắn cũ hơn thời điểm này */
+  before?: string;
+}
+
+export interface CreateMessagePayload {
+  conversationId: string;
+  content: string;
+  images?: string[];
+  clientId?: string;
 }
 
 export interface Conversation {

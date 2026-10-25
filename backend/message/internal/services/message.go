@@ -105,6 +105,7 @@ func (s *messageService) Create(ctx context.Context, userId string, body *dto.Cr
 		Type:           messageType,
 		Content:        content,
 		Images:         images,
+		ClientId:       body.ClientId,
 	}
 
 	if err := s.repo.Create(&message); err != nil {

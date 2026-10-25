@@ -3,6 +3,7 @@ package repository
 import (
 	"conversation/internal/dto"
 	models "conversation/internal/model"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -13,6 +14,7 @@ type ConversationRepository interface {
 	Delete(id string) error
 	FindById(id string) (*models.Conversation, error)
 	FindAll(query dto.GetConversationDto, userId string) ([]models.Conversation, error)
+	UpdateLastMessage(id, lastMessage string, at time.Time) error
 }
 
 type conversationRepository struct {
@@ -58,4 +60,12 @@ func (r *conversationRepository) FindAll(query dto.GetConversationDto, userId st
 	}
 	err := tx.Order("updated_at DESC").Find(&conversations).Error
 	return conversations, err
+}
+
+// UpdateLastMessage only moves forward, so an out-of-order event cannot
+// replace a newer preview with an older one.
+func (r *conversationRepository) UpdateLastMessage(id, lastMessage string, at time.Time) error {
+	return r.db.Model(&models.Conversation{}).
+		Where("id = ? AND updated_at <= ?", id, at).
+		UpdateColumns(map[string]any{"last_message": lastMessage, "updated_at": at}).Error
 }

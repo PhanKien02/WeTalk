@@ -48,6 +48,7 @@ export interface MessageGroupProps {
   group: MessageGroup;
   otherUser: User;
   myUser?: User;
+  onRetry?: (message: Message) => void;
 }
 
 export interface MessageComposerProps {
@@ -57,7 +58,16 @@ export interface MessageComposerProps {
 export interface MessageListProps {
   messages: Message[];
   otherUser: User;
+  myUser?: User;
+  /** Thành viên nhóm, dùng để hiển thị đúng người gửi */
+  members?: User[];
   scrollRef: React.RefObject<HTMLDivElement | null>;
+  hasMore?: boolean;
+  isLoading?: boolean;
+  isLoadingMore?: boolean;
+  loadError?: string | null;
+  onLoadMore?: () => void;
+  onRetry?: (message: Message) => void;
 }
 
 export interface ChatHeaderProps {
@@ -66,7 +76,7 @@ export interface ChatHeaderProps {
 
 export interface ChatPanelProps {
   conversation: Conversation;
-  initialMessages: Message[];
+  members?: User[];
 }
 
 export interface ConversationSidebarProps {

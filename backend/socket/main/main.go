@@ -30,6 +30,9 @@ func main() {
 	io.Use(middleware.SocketAuth(config.AppConfig.JWT_SECRET))
 
 	events.Register(io)
+	if err := events.ConsumeMessages(ctx, rabbitMQ, io); err != nil {
+		log.Fatalf("failed to consume message events: %v", err)
+	}
 
 	router.GET("/socket.io/", gin.WrapH(io))
 

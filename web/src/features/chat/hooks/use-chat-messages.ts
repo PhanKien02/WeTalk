@@ -1,267 +1,286 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { SOCKET_EVENTS, useSocket } from "@/lib/socket";
+import { messageService } from "@/services/message.service";
+import type { Conversation, Message, RawMessage } from "@/type";
 import { useConversationsContext } from "../context/conversations-context";
-import { conversationService } from "@/services/conversation.service";
-import { userService } from "@/services/user.service";
-import type { Conversation, CreateConversationPayload, Message } from "@/type";
+import {
+  formatMessageTime,
+  mergeMessages,
+  normalizeMessage,
+  upsertMessage,
+} from "../lib/message";
 
-export function useChatMessages(
-  conversationOrId: Conversation | string,
-  initialMessages: Message[] = []
-) {
-  const conversation =
-    typeof conversationOrId === "object" ? conversationOrId : null;
-  const conversationId =
-    typeof conversationOrId === "object"
-      ? conversationOrId.id
-      : conversationOrId;
+const PAGE_SIZE = 30;
+// Cách đáy bao nhiêu px thì vẫn coi là đang xem tin mới nhất (tự cuộn khi có tin mới)
+const NEAR_BOTTOM_PX = 120;
+const IMAGE_UNSUPPORTED = "Chưa hỗ trợ gửi ảnh (chưa có dịch vụ tải ảnh lên)";
 
+type PendingScroll =
+  | { type: "bottom"; smooth: boolean }
+  | { type: "preserve"; height: number; top: number };
+
+function isNearBottom(el: HTMLElement) {
+  return el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+}
+
+/** base.service reject bằng body lỗi của API: { success, error: { message } } */
+function errorMessage(err: unknown, fallback: string) {
+  const message = (err as { error?: { message?: string } } | null)?.error?.message;
+  return message || fallback;
+}
+
+function newClientId() {
+  return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export function useChatMessages(conversation: Conversation) {
+  const conversationId = conversation.id;
   const { user: currentUser } = useAuth();
-  const { conversations, addOrUpdateConversation, replaceConversationId } =
-    useConversationsContext();
+  const currentUserId = currentUser?.id;
+  const { socket } = useSocket();
+  const { applyMessage } = useConversationsContext();
 
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // Conversation đã tải xong trang đầu; khác conversationId nghĩa là đang tải
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [prevConversationId, setPrevConversationId] = useState(conversationId);
+
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pendingScroll = useRef<PendingScroll | null>(null);
+  const loadingMoreRef = useRef(false);
 
   if (conversationId !== prevConversationId) {
     setPrevConversationId(conversationId);
-    setMessages(initialMessages);
+    setMessages([]);
+    setHasMore(false);
+    setLoadError(null);
   }
 
-  // Track the actual current conversation ID (which might change from temp/userId to created ID)
-  const currentConversationIdRef = useRef(conversationId);
-  const isCreatedOnBackendRef = useRef(false);
-  const isCreatingRef = useRef(false);
+  // Cuộn sau khi DOM đã có tin nhắn mới, trước khi trình duyệt vẽ
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    const pending = pendingScroll.current;
+    if (!el || !pending) return;
+    pendingScroll.current = null;
 
-  useEffect(() => {
-    currentConversationIdRef.current = conversationId;
-
-    // Check if the current conversation is already a real conversation in the server list
-    const existsInServerList = conversations.some(
-      (c) =>
-        c.id === conversationId &&
-        !c.id.startsWith("mock-") &&
-        !c.id.startsWith("temp-")
-    );
-    isCreatedOnBackendRef.current = existsInServerList || Boolean(conversation?.created_at);
-    isCreatingRef.current = false;
-  }, [conversationId, conversation, initialMessages, conversations]);
-
-  const scrollToBottom = (smooth = true) => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: smooth ? "smooth" : "auto",
+    if (pending.type === "bottom") {
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: pending.smooth ? "smooth" : "auto",
       });
+    } else {
+      // Giữ nguyên vị trí đang xem khi chèn tin cũ lên trên
+      el.scrollTop = el.scrollHeight - pending.height + pending.top;
     }
-  };
+  }, [messages]);
 
+  const fetchLatest = useCallback(
+    async (signal?: AbortSignal) => {
+      const res = await messageService.getMessages(
+        { conversationId, limit: PAGE_SIZE },
+        { signal }
+      );
+      return (res.data ?? [])
+        .map((raw) => normalizeMessage(raw, currentUserId))
+        .reverse();
+    },
+    [conversationId, currentUserId]
+  );
+
+  // 1. Trang tin nhắn mới nhất
   useEffect(() => {
-    scrollToBottom(false);
-  }, [conversationId]);
+    const controller = new AbortController();
+    fetchLatest(controller.signal)
+      .then((page) => {
+        pendingScroll.current = { type: "bottom", smooth: false };
+        setMessages((current) => mergeMessages(current, page));
+        setHasMore(page.length === PAGE_SIZE);
+        setLoadError(null);
+        setLoadedFor(conversationId);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        setLoadError(errorMessage(err, "Không tải được tin nhắn"));
+        setLoadedFor(conversationId);
+      });
+    return () => controller.abort();
+  }, [conversationId, fetchLatest]);
 
-  const sendMessage = async (content: string, images?: string[]) => {
-    if (!content.trim() && !images?.length) return;
+  // 2. Tin nhắn cũ hơn (khi cuộn lên đầu)
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loadingMoreRef.current) return;
+    const oldest = messages.find((m) => m.createdAt)?.createdAt;
+    if (!oldest) return;
 
-    const trimmedContent = content.trim();
+    loadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    try {
+      const res = await messageService.getMessages({
+        conversationId,
+        limit: PAGE_SIZE,
+        before: oldest,
+      });
+      const page = (res.data ?? [])
+        .map((raw) => normalizeMessage(raw, currentUserId))
+        .reverse();
 
-    // 1. Lập tức thêm tin nhắn mới vào danh sách hiển thị ở client
-    const newMsg: Message = {
-      id: `msg_${Date.now()}`,
-      senderId: currentUser?.id || "me",
-      content: trimmedContent,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      isOwn: true,
-      ...(images?.length ? { images } : {}),
+      const el = scrollRef.current;
+      if (el) {
+        pendingScroll.current = {
+          type: "preserve",
+          height: el.scrollHeight,
+          top: el.scrollTop,
+        };
+      }
+      setMessages((current) => mergeMessages(current, page));
+      setHasMore(page.length === PAGE_SIZE);
+    } catch (err) {
+      console.error("Lỗi khi tải tin nhắn cũ:", err);
+    } finally {
+      loadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  }, [conversationId, currentUserId, hasMore, messages]);
+
+  // 3. Realtime qua socket
+  useEffect(() => {
+    if (!socket) return;
+
+    const onCreated = (raw: RawMessage) => {
+      if (raw.conversationId !== conversationId) return;
+      const message = normalizeMessage(raw, currentUserId);
+      const el = scrollRef.current;
+      if (message.isOwn || !el || isNearBottom(el)) {
+        pendingScroll.current = { type: "bottom", smooth: true };
+      }
+      setMessages((current) => upsertMessage(current, message));
     };
 
-    setMessages((prev) => [...prev, newMsg]);
+    const onUpdated = (raw: RawMessage) => {
+      if (raw.conversationId !== conversationId) return;
+      setMessages((current) =>
+        current.some((m) => m.id === raw.id)
+          ? upsertMessage(current, normalizeMessage(raw, currentUserId))
+          : current
+      );
+    };
 
-    setTimeout(() => {
-      scrollToBottom();
-    }, 50);
+    const onDeleted = (raw: RawMessage) => {
+      if (raw.conversationId !== conversationId) return;
+      setMessages((current) => current.filter((m) => m.id !== raw.id));
+    };
 
-    const activeConvId = currentConversationIdRef.current;
-    const isGroup = conversation?.isGroup === true;
-    const isFirstMessage = messages.length === 0;
+    // Bù các tin nhắn bị lỡ trong lúc socket mất kết nối
+    const onConnect = () => {
+      fetchLatest()
+        .then((page) => setMessages((current) => mergeMessages(current, page)))
+        .catch(() => {});
+    };
 
-    // Target user ID in direct conversation
-    const targetUserId =
-      conversation?.memberIds?.find((id) => id && id !== currentUser?.id) ||
-      (conversation?.user?.id && conversation.user.id !== activeConvId
-        ? conversation.user.id
-        : activeConvId !== conversation?.id
-        ? activeConvId
-        : conversation?.user?.id || activeConvId);
+    socket.on(SOCKET_EVENTS.MESSAGE_CREATED, onCreated);
+    socket.on(SOCKET_EVENTS.MESSAGE_UPDATED, onUpdated);
+    socket.on(SOCKET_EVENTS.MESSAGE_DELETED, onDeleted);
+    socket.on("connect", onConnect);
+    return () => {
+      socket.off(SOCKET_EVENTS.MESSAGE_CREATED, onCreated);
+      socket.off(SOCKET_EVENTS.MESSAGE_UPDATED, onUpdated);
+      socket.off(SOCKET_EVENTS.MESSAGE_DELETED, onDeleted);
+      socket.off("connect", onConnect);
+    };
+  }, [socket, conversationId, currentUserId, fetchLatest]);
 
-    // Kiểm tra xem cuộc hội thoại này đã tồn tại trên backend chưa
-    const alreadyExistsInContext = conversations.some(
-      (c) =>
-        (c.id === activeConvId &&
-          !c.id.startsWith("mock-") &&
-          !c.id.startsWith("temp-")) ||
-        (!c.isGroup && targetUserId && c.memberIds?.includes(targetUserId))
+  // 4. Gửi tin nhắn (optimistic, khớp với server qua clientId)
+  const markFailed = useCallback((clientId: string, error: string) => {
+    setMessages((current) =>
+      current.map((m) =>
+        m.clientId === clientId ? { ...m, status: "failed", error } : m
+      )
     );
-    const hasCreatedAt = Boolean(conversation?.created_at);
-    const isAlreadyCreated =
-      isCreatedOnBackendRef.current || alreadyExistsInContext || hasCreatedAt;
+  }, []);
 
-    // Trường hợp cuộc hội thoại đã có sẵn (hoặc là group): Cập nhật last message ở client
-    if (isAlreadyCreated || isGroup) {
-      const realConv =
-        conversations.find(
-          (c) =>
-            c.id === activeConvId ||
-            (!c.isGroup && targetUserId && c.memberIds?.includes(targetUserId))
-        ) || conversation;
-
-      if (realConv) {
-        const targetId = realConv.id || activeConvId;
-        addOrUpdateConversation({
-          ...realConv,
-          id: targetId,
-          lastMessage: trimmedContent || (images?.length ? "[Hình ảnh]" : ""),
-          timestamp: "Vừa xong",
-        });
-
-        if (targetId !== activeConvId) {
-          currentConversationIdRef.current = targetId;
-          window.history.replaceState(null, "", `/messages/${targetId}`);
-        }
-      }
-      return;
-    }
-
-    // Trường hợp cuộc hội thoại 1-1 CHƯA tạo trên backend:
-    if (!isAlreadyCreated && !isGroup) {
-      if (isCreatingRef.current) return;
-      isCreatingRef.current = true;
-
+  const deliver = useCallback(
+    async (message: Message) => {
+      const clientId = message.clientId!;
       try {
-        const senderId = currentUser?.id || "me";
-        let senderName = currentUser?.name || "Người dùng";
-        // 1. Get user by id để lấy thông tin người gửi
-        if (currentUser?.id) {
-          try {
-            const senderRes = await userService.getUserById(currentUser.id);
-            if (senderRes?.data) {
-              senderName = senderRes.data.name || senderName;
-            }
-          } catch (err) {
-            console.warn("Lỗi khi lấy thông tin người gửi từ userService.getUserById:", err);
-          }
-        }
-
-        // Lấy thông tin người nhận (target user)
-        const targetUserId = conversation?.user?.id || conversationId;
-        let targetUserName = conversation?.user?.name || "";
-        let targetUserAvatar = conversation?.user?.avatar || "";
-
-        // Nếu thông tin người nhận chưa có, fetch thêm thông tin người nhận
-        if ((!targetUserName || targetUserName === "Người dùng") && targetUserId && targetUserId !== senderId) {
-          try {
-            const targetRes = await userService.getUserById(targetUserId);
-            if (targetRes?.data) {
-              targetUserName = targetRes.data.name || targetUserName;
-              targetUserAvatar = targetRes.data.avatar || targetUserAvatar;
-            }
-          } catch (err) {
-            console.warn("Lỗi khi lấy thông tin người nhận từ userService.getUserById:", err);
-          }
-        }
-
-        if (!targetUserName) {
-          targetUserName = "Người dùng";
-        }
-
-        // 2. Nếu không phải nhóm: GroupName là tên hai người ghép lại
-        const combinedGroupName = [senderName, targetUserName]
-          .filter(Boolean)
-          .join(", ");
-
-        const memberIds = [senderId, targetUserId].filter(
-          (id, idx, arr) => id && arr.indexOf(id) === idx
-        );
-
-        // 3. Lập tức tạo mới cuộc hội thoại ở client
-        const optimisticConversation: Conversation = {
-          id: activeConvId,
-          user: {
-            id: targetUserId,
-            name: targetUserName,
-            avatar:
-              targetUserAvatar ||
-              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop",
-            status: conversation?.user?.status || "online",
-          },
-          lastMessage: trimmedContent || (images?.length ? "[Hình ảnh]" : ""),
-          timestamp: "Vừa xong",
-          tags: [
-            {
-              id: `tag-${Date.now()}`,
-              labelKey: "direct",
-              fallbackLabel: "Trực tiếp",
-              tone: "orange",
-            },
-          ],
-          isGroup: false,
-          groupName: combinedGroupName,
-          groupAvatar: targetUserAvatar || "",
-          description: `Cuộc trò chuyện giữa ${combinedGroupName}`,
-          memberIds,
-        };
-
-        // Lập tức hiển thị trên danh sách hội thoại ở client (Sidebar)
-        addOrUpdateConversation(optimisticConversation);
-
-        // 4. Call API tạo mới cuộc hội thoại (khi gửi tin nhắn đầu tiên)
-        if (isFirstMessage) {
-          const payload: CreateConversationPayload = {
-            isGroup: false,
-            groupName: combinedGroupName,
-            groupAvatar:
-              targetUserAvatar ||
-              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop",
-            description: `Cuộc trò chuyện giữa ${combinedGroupName}`,
-            tags: ["direct"],
-            memberIds,
-          };
-
-          const createRes = await conversationService.createConversation(payload);
-
-          if (createRes?.data?.id) {
-            const newConversationId = createRes.data.id;
-            isCreatedOnBackendRef.current = true;
-            currentConversationIdRef.current = newConversationId;
-
-            // Cập nhật lại id cuộc hội thoại trong context từ ID tạm sang ID thật
-            replaceConversationId(activeConvId, {
-              ...optimisticConversation,
-              id: newConversationId,
-              created_at: createRes.data.created_at,
-            });
-
-            // Cập nhật URL trình duyệt sang ID mới mà không làm reload trang
-            window.history.replaceState(null, "", `/messages/${newConversationId}`);
-          }
+        const res = await messageService.sendMessage({
+          conversationId,
+          content: message.content,
+          clientId,
+        });
+        if (res.data) {
+          setMessages((current) =>
+            upsertMessage(current, normalizeMessage(res.data!, currentUserId))
+          );
+          applyMessage(res.data);
         }
       } catch (err) {
-        console.error("Lỗi khi tạo mới cuộc hội thoại qua API:", err);
-      } finally {
-        isCreatingRef.current = false;
+        markFailed(clientId, errorMessage(err, "Gửi tin nhắn thất bại"));
       }
-    }
-  };
+    },
+    [applyMessage, conversationId, currentUserId, markFailed]
+  );
+
+  const sendMessage = useCallback(
+    (content: string, images?: string[]) => {
+      const text = content.trim();
+      if (!text && !images?.length) return;
+
+      const clientId = newClientId();
+      const optimistic: Message = {
+        id: clientId,
+        clientId,
+        conversationId,
+        senderId: currentUserId || "me",
+        content: text,
+        images: images?.length ? images : undefined,
+        timestamp: formatMessageTime(),
+        isOwn: true,
+        status: "sending",
+      };
+
+      pendingScroll.current = { type: "bottom", smooth: true };
+      setMessages((current) => [...current, optimistic]);
+
+      // Ảnh trong composer là blob: URL chỉ tồn tại trên máy này, gửi lên sẽ vô dụng
+      if (optimistic.images) {
+        markFailed(clientId, IMAGE_UNSUPPORTED);
+        return;
+      }
+      void deliver(optimistic);
+    },
+    [conversationId, currentUserId, deliver, markFailed]
+  );
+
+  const retryMessage = useCallback(
+    (message: Message) => {
+      if (!message.clientId || message.images?.length) return;
+      setMessages((current) =>
+        current.map((m) =>
+          m.clientId === message.clientId
+            ? { ...m, status: "sending", error: undefined }
+            : m
+        )
+      );
+      void deliver(message);
+    },
+    [deliver]
+  );
 
   return {
     messages,
     sendMessage,
+    retryMessage,
+    loadMore,
+    hasMore,
+    isLoading: loadedFor !== conversationId,
+    isLoadingMore,
+    loadError,
     scrollRef,
   };
 }
