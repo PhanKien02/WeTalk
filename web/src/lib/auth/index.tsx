@@ -43,12 +43,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token?: string,
     userData?: Partial<User>
   ) => {
+    const loggedUser: User = {
+      avatar: "",
+      ...userData,
+      id: userData?.id || "",
+      email: userData?.email || (loginOrEmail.includes("@") ? loginOrEmail : undefined),
+      phone: userData?.phone || (!loginOrEmail.includes("@") ? loginOrEmail : undefined),
+      name: name || userData?.name || loginOrEmail,
+    };
 
     if (token) {
       setCookie(COOKIES.ACCESSTOKEN, token);
     }
     // Save cookie for middleware (7 days)
     document.cookie = `${AUTH_COOKIE}=true; path=/; max-age=604800; SameSite=Lax`;
+    localStorage.setItem(AUTH_STORAGE, JSON.stringify(loggedUser));
+    setUser(loggedUser);
     router.push("/messages");
   };
 
