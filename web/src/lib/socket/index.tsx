@@ -46,8 +46,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     s.on("connect", () => setIsConnected(true));
     s.on("disconnect", () => setIsConnected(false));
-    s.on("connect_error", (err) => {
-      console.error("Socket connect error:", err.message);
+    s.on("connect_error", () => {
+      // Bỏ qua nếu socket connect error (không log console.error gây gián đoạn UI)
+      setIsConnected(false);
     });
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
