@@ -5,7 +5,7 @@ import { UserAvatar } from "../shared/user-avatar";
 
 export function MemberItem({ member }: MemberItemProps) {
   return (
-    <div className="flex items-center gap-3.5 py-2.5 px-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors select-none">
+    <div className="flex items-center gap-3.5 py-2.5 px-3 rounded-xl hover:bg-zinc-100/80 dark:hover:bg-white/5 transition-colors select-none">
       <UserAvatar
         src={member.avatar}
         name={member.name}

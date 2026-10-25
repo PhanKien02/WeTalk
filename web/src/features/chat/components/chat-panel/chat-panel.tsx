@@ -56,7 +56,7 @@ export function ChatPanel({
         reads={reads}
       />
       {/* Giữ chỗ cố định để khung chat không nhảy khi dòng này hiện/ẩn */}
-      <div className="h-5 px-8 text-[12px] text-zinc-400 italic truncate">
+      <div className="h-5 px-8 text-[12px] text-zinc-500 dark:text-zinc-400 italic truncate">
         {typingUsers.length > 0 &&
           `${typingNames} ${typingUsers.length > 1 ? t.typingMany : t.typingOne}`}
       </div>

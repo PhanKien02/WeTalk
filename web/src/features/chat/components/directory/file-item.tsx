@@ -52,7 +52,7 @@ export function FileItem({ file }: FileItemProps) {
   };
 
   return (
-    <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors select-none group">
+    <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-zinc-100/80 dark:hover:bg-white/5 transition-colors select-none group">
       <button
         type="button"
         disabled={!canPreview}

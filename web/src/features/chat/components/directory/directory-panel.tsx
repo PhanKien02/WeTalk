@@ -141,7 +141,7 @@ export function DirectoryPanel({
             type="button"
             onClick={toggleCollapse}
             title={t.files}
-            className="w-9 h-9 rounded-xl text-zinc-400 hover:text-primary hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9 h-9 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-primary hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors cursor-pointer"
           >
             <FileText className="w-4 h-4 stroke-2" />
           </button>
@@ -151,7 +151,7 @@ export function DirectoryPanel({
               type="button"
               onClick={toggleCollapse}
               title={t.teamMembers}
-              className="w-9 h-9 rounded-xl text-zinc-400 hover:text-primary hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-9 h-9 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-primary hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors cursor-pointer"
             >
               <Users className="w-4 h-4 stroke-2" />
             </button>
@@ -163,7 +163,7 @@ export function DirectoryPanel({
           type="button"
           onClick={toggleCollapse}
           title={t.openDirectory}
-          className="w-9 h-9 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/5 flex items-center justify-center transition-colors cursor-pointer"
+          className="w-9 h-9 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors cursor-pointer"
         >
           <Info className="w-4 h-4 stroke-2" />
         </button>
@@ -202,7 +202,7 @@ export function DirectoryPanel({
         {/* ========================================================= */}
         {/* 1. PROFILE / GROUP CARD OVERVIEW                          */}
         {/* ========================================================= */}
-        <div className="flex flex-col items-center text-center p-5 rounded-2xl bg-zinc-50/70 dark:bg-[#151824] border border-border/80 dark:border-white/10">
+        <div className="flex flex-col items-center text-center p-5 rounded-2xl bg-zinc-50 dark:bg-[#151824] border border-zinc-200/80 dark:border-white/10 shadow-xs">
           <div className="relative mb-3">
             <UserAvatar
               src={
@@ -284,7 +284,7 @@ export function DirectoryPanel({
             className="flex items-center justify-between py-2 text-left cursor-pointer group"
           >
             <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-zinc-400 dark:text-zinc-500 group-hover:text-primary transition-colors stroke-2" />
+              <Info className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-primary transition-colors stroke-2" />
               <h4 className="text-[14px] font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-zinc-950 dark:group-hover:text-white">
                 {isGroup ? t.aboutGroup : t.contactInfo}
               </h4>
@@ -298,7 +298,7 @@ export function DirectoryPanel({
           </button>
 
           {isAboutOpen && (
-            <div className="mt-2 p-3.5 rounded-xl bg-zinc-50/80 dark:bg-[#151824] border border-border/80 dark:border-white/10 flex flex-col gap-3 text-xs text-zinc-600 dark:text-zinc-400 animate-in fade-in-50 duration-150">
+            <div className="mt-2 p-3.5 rounded-xl bg-zinc-50 dark:bg-[#151824] border border-zinc-200/80 dark:border-white/10 flex flex-col gap-3 text-xs text-zinc-600 dark:text-zinc-400 animate-in fade-in-50 duration-150">
               {isGroup ? (
                 <p className="text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-300">
                   {conversation.description ||
@@ -585,11 +585,11 @@ export function DirectoryPanel({
             className="flex items-center justify-between py-2 text-left cursor-pointer group"
           >
             <div className="flex items-center gap-2">
-              <Pin className="w-4 h-4 text-zinc-400 dark:text-zinc-500 group-hover:text-primary transition-colors stroke-2" />
+              <Pin className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-primary transition-colors stroke-2" />
               <h4 className="text-[14px] font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-zinc-950 dark:group-hover:text-white">
                 {t.pinnedMessages}
               </h4>
-              <span className="px-1.5 py-0.2 rounded-full bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 text-[11px] font-bold">
+              <span className="px-1.5 py-0.2 rounded-full bg-zinc-100 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 text-[11px] font-bold">
                 {conversation.pinnedCount || 3}
               </span>
             </div>
@@ -603,7 +603,7 @@ export function DirectoryPanel({
 
           {isPinnedOpen && (
             <div className="mt-2 flex flex-col gap-2 animate-in fade-in-50 duration-150">
-              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-[#151824] border border-border/80 dark:border-white/10 text-xs flex flex-col gap-1">
+              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-[#151824] border border-zinc-200/80 dark:border-white/10 text-xs flex flex-col gap-1">
                 <span className="font-semibold text-zinc-800 dark:text-zinc-200">
                   Sprint Planning Timeline
                 </span>
@@ -665,7 +665,7 @@ export function DirectoryPanel({
                 <button
                   type="button"
                   onClick={() => setIsEmojiPickerOpen(true)}
-                  className="group flex items-center justify-between p-2.5 rounded-xl border border-zinc-200/80 dark:border-white/10 bg-zinc-50/50 dark:bg-[#151824] hover:bg-zinc-100/70 dark:hover:bg-white/10 hover:border-zinc-300 dark:hover:border-white/20 transition-all text-left cursor-pointer"
+                  className="group flex items-center justify-between p-2.5 rounded-xl border border-zinc-200/80 dark:border-white/10 bg-zinc-50 dark:bg-[#151824] hover:bg-zinc-100/80 dark:hover:bg-white/10 hover:border-zinc-300 dark:hover:border-white/20 transition-all text-left cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20 flex items-center justify-center shrink-0">
@@ -675,7 +675,7 @@ export function DirectoryPanel({
                       <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-primary transition-colors truncate">
                         {t.defaultEmoji}
                       </span>
-                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate">
+                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
                         Phản hồi nhanh 1 chạm
                       </span>
                     </div>
@@ -692,7 +692,7 @@ export function DirectoryPanel({
                 <button
                   type="button"
                   onClick={() => setIsWallpaperPickerOpen(true)}
-                  className="group flex items-center justify-between p-2.5 rounded-xl border border-zinc-200/80 dark:border-white/10 bg-zinc-50/50 dark:bg-[#151824] hover:bg-zinc-100/70 dark:hover:bg-white/10 hover:border-zinc-300 dark:hover:border-white/20 transition-all text-left cursor-pointer"
+                  className="group flex items-center justify-between p-2.5 rounded-xl border border-zinc-200/80 dark:border-white/10 bg-zinc-50 dark:bg-[#151824] hover:bg-zinc-100/80 dark:hover:bg-white/10 hover:border-zinc-300 dark:hover:border-white/20 transition-all text-left cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-primary border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center shrink-0">
@@ -702,7 +702,7 @@ export function DirectoryPanel({
                       <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-primary transition-colors truncate">
                         {t.chatWallpaper}
                       </span>
-                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate">
+                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
                         {typeof t[currentPreset.nameKey] === "string"
                           ? (t[currentPreset.nameKey] as string)
                           : currentPreset.nameFallback}
@@ -725,7 +725,7 @@ export function DirectoryPanel({
                 <button
                   type="button"
                   onClick={() => setIsBubblePickerOpen(true)}
-                  className="group flex items-center justify-between p-2.5 rounded-xl border border-zinc-200/80 dark:border-white/10 bg-zinc-50/50 dark:bg-[#151824] hover:bg-zinc-100/70 dark:hover:bg-white/10 hover:border-zinc-300 dark:hover:border-white/20 transition-all text-left cursor-pointer"
+                  className="group flex items-center justify-between p-2.5 rounded-xl border border-zinc-200/80 dark:border-white/10 bg-zinc-50 dark:bg-[#151824] hover:bg-zinc-100/80 dark:hover:bg-white/10 hover:border-zinc-300 dark:hover:border-white/20 transition-all text-left cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-500/20 flex items-center justify-center shrink-0">
@@ -735,7 +735,7 @@ export function DirectoryPanel({
                       <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-primary transition-colors truncate">
                         {t.bubbleStyle}
                       </span>
-                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate">
+                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
                         {currentBubblePreset.nameFallback} • {currentBubblePreset.iconEmoji}
                       </span>
                     </div>

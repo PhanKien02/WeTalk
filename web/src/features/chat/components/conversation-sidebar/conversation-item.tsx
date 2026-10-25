@@ -20,10 +20,10 @@ export const ConversationItem = memo(function ConversationItem({
       prefetch={false}
       style={{ contentVisibility: "auto", containIntrinsicSize: "0 76px" }}
       className={cn(
-        "group relative flex items-start gap-3.5 p-3.5 rounded-2xl transition-all duration-150 select-none cursor-pointer",
+        "group relative flex items-start gap-3.5 p-3.5 rounded-2xl transition-all duration-150 select-none cursor-pointer border",
         isActive
-          ? "bg-[#F5F5FF] dark:bg-primary-soft/30 shadow-[0_2px_8px_rgba(97,94,240,0.06)]"
-          : "hover:bg-zinc-50/80 dark:hover:bg-white/5 active:bg-zinc-100/70 dark:active:bg-white/10"
+          ? "bg-primary-soft dark:bg-primary-soft/30 border-primary/25 shadow-xs"
+          : "border-transparent hover:bg-zinc-100/80 dark:hover:bg-white/5 active:bg-zinc-200/60 dark:active:bg-white/10"
       )}
     >
       {/* Avatar người dùng */}
@@ -48,7 +48,7 @@ export const ConversationItem = memo(function ConversationItem({
           >
             {user.name}
           </h3>
-          <span className="text-[12px] font-medium text-zinc-400 shrink-0">
+          <span className="text-[12px] font-medium text-zinc-500 dark:text-zinc-400 shrink-0">
             {timestamp}
           </span>
         </div>
@@ -60,7 +60,7 @@ export const ConversationItem = memo(function ConversationItem({
               "text-[13px] truncate leading-snug",
               unreadCount > 0
                 ? "text-zinc-900 dark:text-zinc-100 font-semibold"
-                : "text-zinc-500"
+                : "text-zinc-500 dark:text-zinc-400"
             )}
           >
             {lastMessage}

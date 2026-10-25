@@ -26,7 +26,7 @@ export const ConversationSidebarSkeleton = memo(
           return (
             <div
               key={i}
-              className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-zinc-50/60 dark:bg-white/5 animate-pulse"
+              className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-zinc-100/70 dark:bg-white/5 animate-pulse"
             >
               {/* Avatar skeleton matching UserAvatar size="lg" */}
               <div className="w-12 h-12 rounded-2xl bg-zinc-200/80 dark:bg-zinc-800/80 shrink-0 mt-0.5" />

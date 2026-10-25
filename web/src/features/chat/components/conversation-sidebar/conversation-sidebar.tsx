@@ -132,7 +132,7 @@ export function ConversationSidebar({}: ConversationSidebarProps = {}) {
               ) : null}
 
               {isLoadingMore ? (
-                <div className="py-3 flex justify-center items-center text-zinc-400">
+                <div className="py-3 flex justify-center items-center text-zinc-500 dark:text-zinc-400">
                   <span className="inline-flex items-center justify-center animate-spin text-primary">
                     <Loader2 className="w-4 h-4" />
                   </span>
@@ -141,7 +141,7 @@ export function ConversationSidebar({}: ConversationSidebarProps = {}) {
             </>
           ) : (
             <div className="py-14 px-4 text-center flex flex-col items-center justify-center gap-2.5">
-              <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-white/5 flex items-center justify-center text-zinc-400">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-white/5 flex items-center justify-center text-zinc-400 dark:text-zinc-500">
                 <MessageSquareDashed className="w-6 h-6 stroke-[1.8]" />
               </div>
               <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">

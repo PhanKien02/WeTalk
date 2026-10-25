@@ -58,7 +58,7 @@ export function UserAvatar({
             : undefined
         }
         className={cn(
-          "w-full h-full overflow-hidden flex items-center justify-center font-medium bg-muted text-foreground/80",
+          "w-full h-full overflow-hidden flex items-center justify-center font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200/50 dark:border-white/10",
           shapeClass,
           canPreview &&
             "cursor-zoom-in transition-[filter,transform] hover:brightness-90 focus-visible:outline-2 focus-visible:outline-primary"
@@ -81,9 +81,9 @@ export function UserAvatar({
       {showStatus && (
         <span
           className={cn(
-            "absolute bottom-0 right-0 rounded-full ring-white",
+            "absolute bottom-0 right-0 rounded-full ring-white dark:ring-[#11131f]",
             statusDotSizes[size],
-            status === "online" ? "bg-emerald-500" : "bg-zinc-300"
+            status === "online" ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-600"
           )}
         />
       )}

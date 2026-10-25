@@ -177,7 +177,7 @@ export function MessageComposer({ onSendMessage, onTyping, onStopTyping }: Messa
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             placeholder={t.typeMessage}
-            className="w-full h-12 pl-5 pr-22 rounded-2xl bg-white dark:bg-[#151824] border border-[#E2E8F0] dark:border-white/10 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all shadow-2xs"
+            className="w-full h-12 pl-5 pr-22 rounded-2xl bg-zinc-100/70 dark:bg-[#151824] border border-zinc-200 dark:border-white/10 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none focus:bg-white dark:focus:bg-[#151824] focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all shadow-2xs"
           />
 
           {/* Right side controls: Emoji trigger + (Default Emoji Send OR Submit Send) */}
@@ -186,7 +186,7 @@ export function MessageComposer({ onSendMessage, onTyping, onStopTyping }: Messa
               type="button"
               onClick={() => setIsEmojiPickerOpen(true)}
               title={t.chooseEmoji}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-amber-500 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-amber-500 hover:bg-zinc-200/60 dark:hover:bg-white/5 transition-colors cursor-pointer"
             >
               <Smile className="w-5 h-5 stroke-2" />
             </button>

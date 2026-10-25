@@ -24,21 +24,21 @@ export const ConversationSearch = memo(function ConversationSearch({
 
   return (
     <div className="relative w-full">
-      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 stroke-[2.2] pointer-events-none" />
+      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 stroke-[2.2] pointer-events-none" />
       <input
         type="text"
         value={value}
         onChange={handleInputChange}
         placeholder={t.searchPlaceholder}
         aria-label={t.searchPlaceholder}
-        className="w-full h-11 pl-10 pr-9 bg-[#F4F4F6] dark:bg-white/5 text-zinc-800 dark:text-zinc-100 text-sm rounded-xl outline-none placeholder:text-zinc-400 focus:bg-white dark:focus:bg-[#1a1d2e] focus:ring-2 focus:ring-primary/20 transition-all border border-transparent dark:border-white/10 focus:border-primary/30"
+        className="w-full h-11 pl-10 pr-9 bg-zinc-100/80 dark:bg-white/5 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:bg-white dark:focus:bg-[#1a1d2e] focus:ring-2 focus:ring-primary/20 transition-all border border-zinc-200/80 dark:border-white/10 focus:border-primary/50"
       />
       {value ? (
         <button
           type="button"
           onClick={handleClear}
           aria-label="Clear search"
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors cursor-pointer"
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer"
         >
           <X className="w-3.5 h-3.5 stroke-[2.2]" />
         </button>

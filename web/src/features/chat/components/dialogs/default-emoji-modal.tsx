@@ -34,11 +34,11 @@ export function DefaultEmojiModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-xs animate-in fade-in-50 duration-200">
       <div
-        className="w-full max-w-md bg-card dark:bg-[#151824] rounded-3xl shadow-2xl border border-border dark:border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md bg-white dark:bg-[#151824] rounded-3xl shadow-2xl border border-zinc-200 dark:border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4.5 border-b border-border dark:border-white/10">
+        <div className="flex items-center justify-between px-6 py-4.5 border-b border-zinc-200/80 dark:border-white/10">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-500 flex items-center justify-center">
               <Smile className="w-5 h-5 stroke-[2.2]" />
@@ -55,7 +55,7 @@ export function DefaultEmojiModal() {
           <button
             type="button"
             onClick={() => setIsEmojiPickerOpen(false)}
-            className="p-1.5 rounded-xl text-zinc-400 hover:text-foreground hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-foreground hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -64,9 +64,9 @@ export function DefaultEmojiModal() {
         {/* Content Body */}
         <div className="p-6 flex flex-col gap-5">
           {/* Active Preview Banner */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-white/5 border border-border dark:border-white/10">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-[#1c2030] border border-border/80 dark:border-white/10 shadow-xs flex items-center justify-center text-2xl select-none animate-in zoom-in-50">
+              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-[#1c2030] border border-zinc-200/80 dark:border-white/10 shadow-xs flex items-center justify-center text-2xl select-none animate-in zoom-in-50">
                 {selectedEmoji}
               </div>
               <div className="flex flex-col">
@@ -100,8 +100,8 @@ export function DefaultEmojiModal() {
                     className={cn(
                       "group flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer relative",
                       isSelected
-                        ? "border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10 shadow-xs scale-102"
-                        : "border-zinc-200/80 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 hover:bg-zinc-50 dark:hover:bg-white/5 hover:scale-105 active:scale-95"
+                        ? "border-primary ring-2 ring-primary/20 bg-primary-soft/50 dark:bg-primary/10 shadow-xs scale-102"
+                        : "border-zinc-200/80 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 hover:bg-zinc-100/80 dark:hover:bg-white/5 hover:scale-105 active:scale-95"
                     )}
                   >
                     <span className="text-2xl select-none transition-transform group-hover:scale-115">
@@ -128,11 +128,11 @@ export function DefaultEmojiModal() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-6 py-4 bg-zinc-50/80 dark:bg-[#11131c] border-t border-border dark:border-white/10">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 bg-zinc-50 dark:bg-[#11131c] border-t border-zinc-200/80 dark:border-white/10">
           <button
             type="button"
             onClick={() => setIsEmojiPickerOpen(false)}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-foreground hover:bg-zinc-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-foreground hover:bg-zinc-200/70 dark:hover:bg-white/10 transition-colors cursor-pointer"
           >
             {t.close}
           </button>

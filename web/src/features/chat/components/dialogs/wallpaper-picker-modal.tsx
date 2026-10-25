@@ -78,11 +78,11 @@ export function WallpaperPickerModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-xs animate-in fade-in-50 duration-200">
       <div
-        className="w-full max-w-xl bg-card dark:bg-[#151824] rounded-3xl shadow-2xl border border-border dark:border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-xl bg-white dark:bg-[#151824] rounded-3xl shadow-2xl border border-zinc-200 dark:border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4.5 border-b border-border dark:border-white/10">
+        <div className="flex items-center justify-between px-6 py-4.5 border-b border-zinc-200/80 dark:border-white/10">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
               <ImageIcon className="w-5 h-5 stroke-[2.2]" />
@@ -99,7 +99,7 @@ export function WallpaperPickerModal() {
           <button
             type="button"
             onClick={() => setIsWallpaperPickerOpen(false)}
-            className="p-1.5 rounded-xl text-zinc-400 hover:text-foreground hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-foreground hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -114,7 +114,7 @@ export function WallpaperPickerModal() {
             </span>
             <div
               className={cn(
-                "w-full h-36 rounded-2xl border border-border p-4 flex flex-col justify-end gap-2 overflow-hidden transition-all duration-300 relative shadow-inner",
+                "w-full h-36 rounded-2xl border border-zinc-200 dark:border-white/10 p-4 flex flex-col justify-end gap-2 overflow-hidden transition-all duration-300 relative shadow-inner",
                 activePreset.className
               )}
               style={activePreset.style}
@@ -151,8 +151,8 @@ export function WallpaperPickerModal() {
                     className={cn(
                       "group flex flex-col items-center gap-2 p-2.5 rounded-2xl border text-center transition-all cursor-pointer relative",
                       isSelected
-                        ? "border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10"
-                        : "border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 hover:bg-zinc-50/60 dark:hover:bg-white/5"
+                        ? "border-primary ring-2 ring-primary/20 bg-primary-soft/50 dark:bg-primary/10"
+                        : "border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 hover:bg-zinc-50 dark:hover:bg-white/5"
                     )}
                   >
                     <div
@@ -183,7 +183,7 @@ export function WallpaperPickerModal() {
           </div>
 
           {/* Custom Upload Option */}
-          <div className="flex flex-col gap-2 pt-2 border-t border-border dark:border-white/10">
+          <div className="flex flex-col gap-2 pt-2 border-t border-zinc-200/80 dark:border-white/10">
             <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
               {t.customWallpaper}
             </span>
@@ -201,8 +201,8 @@ export function WallpaperPickerModal() {
               className={cn(
                 "flex items-center gap-3.5 p-3 rounded-2xl border-2 border-dashed transition-all cursor-pointer",
                 selectedId === "custom"
-                  ? "border-primary bg-primary/5 dark:bg-primary/10"
-                  : "border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 hover:bg-zinc-50/60 dark:hover:bg-white/5"
+                  ? "border-primary bg-primary-soft/50 dark:bg-primary/10"
+                  : "border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 hover:bg-zinc-50 dark:hover:bg-white/5"
               )}
             >
               <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-white/5 flex items-center justify-center text-zinc-600 dark:text-zinc-300 shrink-0">
@@ -228,11 +228,11 @@ export function WallpaperPickerModal() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 bg-zinc-50/80 dark:bg-[#11131c] border-t border-border dark:border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 bg-zinc-50 dark:bg-[#11131c] border-t border-zinc-200/80 dark:border-white/10">
           <button
             type="button"
             onClick={handleReset}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-foreground hover:bg-zinc-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-foreground hover:bg-zinc-200/70 dark:hover:bg-white/10 transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>{t.resetWallpaper}</span>
@@ -242,7 +242,7 @@ export function WallpaperPickerModal() {
             <button
               type="button"
               onClick={() => setIsWallpaperPickerOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-foreground hover:bg-zinc-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-foreground hover:bg-zinc-200/70 dark:hover:bg-white/10 transition-colors cursor-pointer"
             >
               {t.cancel}
             </button>

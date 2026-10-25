@@ -107,7 +107,7 @@ export function MessageList({
           {loadError}
         </div>
       ) : messages.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-zinc-400">
+        <div className="flex flex-1 items-center justify-center text-sm text-zinc-500 dark:text-zinc-400">
           Chưa có tin nhắn nào. Hãy gửi lời chào!
         </div>
       ) : null}

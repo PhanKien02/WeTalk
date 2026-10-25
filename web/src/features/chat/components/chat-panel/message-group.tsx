@@ -67,7 +67,7 @@ export function MessageGroup({ group, otherUser, myUser, onRetry, readersByMessa
           >
             <MessageBubble message={message} />
             {message.status === "sending" && (
-              <span className="text-[11px] text-zinc-400 px-1">Đang gửi...</span>
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-400 px-1">Đang gửi...</span>
             )}
             {message.status === "failed" && (
               <span className="text-[11px] text-red-500 px-1">
