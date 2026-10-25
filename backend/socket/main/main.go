@@ -4,9 +4,10 @@ import (
 	"context"
 	"log"
 	"socket/config"
-	"socket/config/redis"
+	"socket/internal/events"
 	"socket/internal/middleware"
-	ws "socket/internal/websocket"
+	"socket/internal/socketio"
+	"socket/redis"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,8 +21,12 @@ func main() {
 
 	redis.ConectRedis(ctx)
 	router.Use(middleware.CORSMiddleware())
-	router.Use(middleware.AuthRequired(config.AppConfig.JWT_SECRET))
-	router.GET("/ws", ws.NewHub().ServeWS)
+	io := socketio.NewServer(socketio.Options{})
+	io.Use(middleware.SocketAuth(config.AppConfig.JWT_SECRET))
+
+	events.Register(io)
+
+	router.GET("/socket.io/", gin.WrapH(io))
 
 	router.Run(":" + config.AppConfig.Port)
 }

@@ -15,11 +15,10 @@ func ConectRedis(ctx context.Context) *redis.Client {
 		Addr: "localhost:6379",
 	})
 
-	defer rdb.Close()
-
 	if err := rdb.Ping(ctx).Err(); err != nil {
 		log.Fatal(err)
 	}
+	RedisClient = rdb
 	return rdb
 }
 func GetInstance(ctx context.Context) *redis.Client {
