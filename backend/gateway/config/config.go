@@ -32,10 +32,10 @@ func Init() {
 
 	AppConfig = Config{
 		Port:                   getEnv("PORT", "8080"),
-		AuthServiceURL:         getEnv("AUTH_SERVICE_URL", "http://localhost:8081"),
-		UserServiceURL:         getEnv("USER_SERVICE_URL", "http://localhost:8082"),
-		ConversationServiceURL: getEnv("CONVERSATION_SERVICE_URL", "http://localhost:8083"),
-		MessageServiceURL:      getEnv("MESSAGE_SERVICE_URL", "http://localhost:8084"),
+		AuthServiceURL:         getEnv("AUTH_SERVICE_URL", ""),
+		UserServiceURL:         getEnv("USER_SERVICE_URL", ""),
+		ConversationServiceURL: getEnv("CONVERSATION_SERVICE_URL", ""),
+		MessageServiceURL:      getEnv("MESSAGE_SERVICE_URL", ""),
 		JWTSecret:              getEnv("JWT_SECRET", "sadfdsfasdkfnasdfkasldfnasdf8wqe475rq38rfasdfklaadsfasdfas"),
 		AuthRequiredForUsers:   authRequired,
 	}
