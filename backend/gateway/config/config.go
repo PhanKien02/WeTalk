@@ -14,6 +14,7 @@ type Config struct {
 	UserServiceURL         string
 	ConversationServiceURL string
 	MessageServiceURL      string
+	UploadServiceURL       string
 	JWTSecret              string
 	AuthRequiredForUsers   bool
 }
@@ -36,7 +37,8 @@ func Init() {
 		UserServiceURL:         getEnv("USER_SERVICE_URL", ""),
 		ConversationServiceURL: getEnv("CONVERSATION_SERVICE_URL", ""),
 		MessageServiceURL:      getEnv("MESSAGE_SERVICE_URL", ""),
-		JWTSecret:              getEnv("JWT_SECRET", "sadfdsfasdkfnasdfkasldfnasdf8wqe475rq38rfasdfklaadsfasdfas"),
+		UploadServiceURL:       getEnv("UPLOAD_SERVICE_URL", ""),
+		JWTSecret:              getEnv("JWT_SECRET", ""),
 		AuthRequiredForUsers:   authRequired,
 	}
 }
