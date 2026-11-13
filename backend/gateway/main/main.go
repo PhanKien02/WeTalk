@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"gateway/config"
+	"gateway/docs"
 	"gateway/main/services"
 	"gateway/middleware"
 	"gateway/proxy"
@@ -38,7 +39,9 @@ func main() {
 			"services": registry,
 		})
 	})
+	docs.Register(router)
 
+	router.MaxMultipartMemory = 8 << 20 // 8 MiB
 	// Dynamic registration: all versions (v1, v2, v3...) share the service's base URL
 	for _, svc := range registry {
 		currentSvc := svc

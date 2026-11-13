@@ -18,7 +18,7 @@ func GenerateJWT(id string) (string, string, error) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"id":  id,
-			"exp": time.Now().Add(time.Minute *5).Unix(),
+			"exp": time.Now().Add(time.Minute * 15).Unix(),
 		})
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{

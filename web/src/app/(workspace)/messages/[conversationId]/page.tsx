@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { notFound, useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -13,6 +13,18 @@ import useGetConversation from "@/features/chat/hooks/use-get-conversation-by-id
 import useConversationMembers from "@/features/chat/hooks/use-conversation-members";
 import { useConversationRoom } from "@/features/chat/hooks/use-conversation-room";
 import type { User } from "@/type";
+
+const WIDE_QUERY = "(min-width: 1280px)";
+
+function subscribeWide(onChange: () => void) {
+  const mql = window.matchMedia(WIDE_QUERY);
+  mql.addEventListener("change", onChange);
+  return () => mql.removeEventListener("change", onChange);
+}
+
+const getWide = () => window.matchMedia(WIDE_QUERY).matches;
+// Trên server chưa biết kích thước màn hình: coi là màn hình nhỏ (directory ẩn)
+const getWideOnServer = () => false;
 
 export default function ConversationPage() {
   const params = useParams();
@@ -99,6 +111,23 @@ export default function ConversationPage() {
     [typingUserIds, members, effectiveConversation]
   );
 
+  // Tự động tạm ẩn directory khi màn hình nhỏ (< 1280px). Người dùng bật/tắt tay
+  // thì giữ lựa chọn đó cho tới khi màn hình đổi qua lại mốc 1280px.
+  // Mọi hook phải nằm trước các lệnh return sớm bên dưới (Rules of Hooks).
+  const isWide = useSyncExternalStore(subscribeWide, getWide, getWideOnServer);
+  const [directoryOverride, setDirectoryOverride] = useState<{
+    isWide: boolean;
+    collapsed: boolean;
+  } | null>(null);
+  const isDirectoryCollapsed =
+    directoryOverride && directoryOverride.isWide === isWide
+      ? directoryOverride.collapsed
+      : !isWide;
+
+  const handleToggleDirectory = useCallback(() => {
+    setDirectoryOverride({ isWide, collapsed: !isDirectoryCollapsed });
+  }, [isWide, isDirectoryCollapsed]);
+
   // 6. Loading state: only show when we have NO cached conversation to display
   if (isLoading && !conversation) {
     return (
@@ -118,31 +147,6 @@ export default function ConversationPage() {
   if (!conversation) {
     return null;
   }
-
-  // Tự động tạm ẩn directory khi màn hình nhỏ (< 1280px) cho đến khi bật lại
-  const [isDirectoryCollapsed, setIsDirectoryCollapsed] = useState<boolean>(true);
-
-  useEffect(() => {
-    const mql = window.matchMedia("(min-width: 1280px)");
-    setIsDirectoryCollapsed(!mql.matches);
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      // Khi màn hình chuyển sang nhỏ (< 1280px), tự động tạm ẩn
-      if (!e.matches) {
-        setIsDirectoryCollapsed(true);
-      } else {
-        // Khi mở rộng màn hình lớn (>= 1280px), khôi phục hiển thị
-        setIsDirectoryCollapsed(false);
-      }
-    };
-
-    mql.addEventListener("change", handleChange);
-    return () => mql.removeEventListener("change", handleChange);
-  }, []);
-
-  const handleToggleDirectory = useCallback(() => {
-    setIsDirectoryCollapsed((prev) => !prev);
-  }, []);
 
   const activeConversation = effectiveConversation || conversation;
 

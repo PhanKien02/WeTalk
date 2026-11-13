@@ -72,7 +72,7 @@ export function MessageGroup({ group, otherUser, myUser, onRetry, readersByMessa
             {message.status === "failed" && (
               <span className="text-[11px] text-red-500 px-1">
                 {message.error || "Gửi thất bại"}
-                {onRetry && !message.images?.length && (
+                {onRetry && (
                   <>
                     {" · "}
                     <button

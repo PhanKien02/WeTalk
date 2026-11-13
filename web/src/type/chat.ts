@@ -138,6 +138,22 @@ export interface QueryMessagesParams {
   before?: string;
 }
 
+/** Kết quả của POST /v1/upload */
+export interface UploadResult {
+  key: string;
+  url: string;
+  name: string;
+  size: number;
+  contentType: string;
+}
+
+/** Ảnh đã chọn trong composer nhưng chưa tải lên */
+export interface ComposerImage {
+  file: File;
+  /** blob: URL để xem trước */
+  previewUrl: string;
+}
+
 export interface CreateMessagePayload {
   conversationId: string;
   content: string;

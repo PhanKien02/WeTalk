@@ -1,4 +1,5 @@
 import type {
+  ComposerImage,
   Conversation,
   Message,
   MessageGroup,
@@ -55,7 +56,8 @@ export interface MessageGroupProps {
 }
 
 export interface MessageComposerProps {
-  onSendMessage: (content: string, images?: string[]) => void;
+  /** images: ảnh đã chọn, sẽ được tải lên R2 trước khi gửi tin nhắn */
+  onSendMessage: (content: string, images?: ComposerImage[]) => void;
   /** Gọi mỗi lần gõ phím; dùng để báo "đang soạn tin" */
   onTyping?: () => void;
   onStopTyping?: () => void;

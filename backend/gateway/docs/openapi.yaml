@@ -1,0 +1,1161 @@
+openapi: 3.0.3
+info:
+  title: WeTalk API
+  version: "1.0.0"
+  description: |
+    Public HTTP API of WeTalk, served through the API gateway.
+
+    The gateway forwards each `/api/v1/<prefix>/*` request unchanged to the
+    matching service. On protected routes it validates the HS256 JWT from the
+    `Authorization: Bearer <token>` header and passes the user id to the service
+    in an `X-User-Id` header. Clients never send `X-User-Id` themselves.
+
+    Most services wrap responses in the envelope
+    `{ success, data, error: { code, message }, meta }`.
+    The conversation service does not use it yet; their responses are
+    described per operation.
+
+    Realtime events (`message:created`, `presence`, `typing`, ...) go through the
+    separate Socket.IO server on port 9000 and are not described here.
+servers:
+  - url: http://localhost:8080
+    description: Local API gateway
+tags:
+  - name: Auth
+    description: Registration, login and token refresh (auth-service, no JWT)
+  - name: Users
+    description: User profiles (user-service, JWT when AUTH_REQUIRED_FOR_USERS=true)
+  - name: Conversations
+    description: Direct and group conversations (conversation service)
+  - name: Messages
+    description: Messages and read receipts (message service)
+  - name: Upload
+    description: File upload (upload service)
+  - name: Gateway
+    description: Gateway endpoints
+
+paths:
+  /health:
+    get:
+      tags: [Gateway]
+      summary: Gateway health and registered services
+      security: []
+      responses:
+        "200":
+          description: Gateway is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  services:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RegisteredService"
+
+  # ---------------------------------------------------------------- Auth
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register an account
+      description: |
+        Creates an inactive account and publishes `user.created`. The account
+        becomes active once user-service has created the profile, so a login
+        right after registering can fail for a short time.
+
+        The response echoes the request body, including the password.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "200":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/RegisterRequest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in with email or phone
+      description: |
+        Returns an access token in the body and sets the refresh token as an
+        httpOnly `refresh_token` cookie (7 days, path `/`).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          headers:
+            Set-Cookie:
+              description: "`refresh_token=<jwt>; Path=/; HttpOnly`"
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/LoginResponse"
+        "400":
+          description: Validation failed, user not found or wrong password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /api/v1/auth/refresh-token:
+    post:
+      tags: [Auth]
+      summary: Get a new access token from the refresh cookie
+      description: Rotates the `refresh_token` cookie and returns a new access token.
+      security:
+        - refreshCookie: []
+      responses:
+        "200":
+          description: New tokens issued
+          headers:
+            Set-Cookie:
+              description: New `refresh_token` cookie
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Missing, invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  # ---------------------------------------------------------------- Users
+  /api/v1/users:
+    get:
+      tags: [Users]
+      summary: List active users
+      parameters:
+        - name: search
+          in: query
+          description: Matches email, phone or name (SQL LIKE)
+          schema:
+            type: string
+        - name: ids
+          in: query
+          description: Only return these user ids. Repeat the parameter for several ids.
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/v1/users/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      tags: [Users]
+      summary: Get an active user by id
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          description: User not found or database error (the service returns 500 for both)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    put:
+      tags: [Users]
+      summary: Update a user profile
+      description: |
+        Only non-empty fields are updated. The service does not check that `id`
+        is the caller's own id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: string
+                        example: Update success
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ---------------------------------------------------------------- Conversations
+  /api/v1/conversations:
+    get:
+      tags: [Conversations]
+      summary: List the caller's conversations
+      parameters:
+        - name: textSearch
+          in: query
+          schema:
+            type: string
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Conversations the caller is a member of
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Conversation"
+        "400":
+          $ref: "#/components/responses/PlainBadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/PlainServerError"
+    post:
+      tags: [Conversations]
+      summary: Create a conversation
+      description: |
+        The caller is added to `memberIds` if missing. Publishes
+        `conversation.created`. All fields are required, so send empty strings
+        or arrays for a direct (non-group) conversation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateConversationRequest"
+      responses:
+        "200":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Conversation"
+        "400":
+          $ref: "#/components/responses/PlainBadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/PlainServerError"
+
+  /api/v1/conversations/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      tags: [Conversations]
+      summary: Get a conversation by id
+      description: Does not check membership.
+      responses:
+        "200":
+          description: Conversation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Conversation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          description: Not found or database error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlainError"
+    put:
+      tags: [Conversations]
+      summary: Update a conversation (members only)
+      description: |
+        Send only the fields to change. When `memberIds` is sent, `memberCount`
+        is recalculated, and removed members receive `conversation:deleted` over
+        the socket. Publishes `conversation.updated`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateConversationRequest"
+      responses:
+        "200":
+          description: Updated conversation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Conversation"
+        "400":
+          $ref: "#/components/responses/PlainBadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PlainForbidden"
+        "404":
+          $ref: "#/components/responses/PlainNotFound"
+        "500":
+          $ref: "#/components/responses/PlainServerError"
+    delete:
+      tags: [Conversations]
+      summary: Delete a conversation (members only)
+      description: Publishes `conversation.deleted`.
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Conversation deleted successfully
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PlainForbidden"
+        "404":
+          $ref: "#/components/responses/PlainNotFound"
+        "500":
+          $ref: "#/components/responses/PlainServerError"
+
+  # ---------------------------------------------------------------- Messages
+  /api/v1/messages:
+    get:
+      tags: [Messages]
+      summary: List messages in a conversation, newest first
+      description: |
+        To load older messages, pass the `created_at` of the oldest message
+        already loaded as `before`. The caller must be a member.
+      parameters:
+        - $ref: "#/components/parameters/ConversationIdQuery"
+        - name: before
+          in: query
+          description: RFC 3339 timestamp; only messages created before it are returned
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 30
+      responses:
+        "200":
+          description: Messages, newest first
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Message"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    post:
+      tags: [Messages]
+      summary: Send a message
+      description: |
+        A message needs `content`, `images`, or both. With images its `type` is
+        `image`, otherwise `text`. `clientId` is echoed back (not stored) in the
+        response and in the `message:created` socket event. Publishes
+        `message.created`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMessageRequest"
+      responses:
+        "201":
+          description: Message created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Message"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/v1/messages/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    put:
+      tags: [Messages]
+      summary: Edit a message (sender only)
+      description: Sets `isEdited` and publishes `message.updated`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMessageRequest"
+      responses:
+        "200":
+          description: Updated message
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Message"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    delete:
+      tags: [Messages]
+      summary: Delete a message (sender only, soft delete)
+      description: Publishes `message.deleted`.
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/v1/messages/read:
+    post:
+      tags: [Messages]
+      summary: Mark a conversation as read up to a message
+      description: |
+        The read position only moves forward. `message.read` is published only
+        when the position changes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkReadRequest"
+      responses:
+        "200":
+          description: The caller's current read position
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/MessageRead"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/v1/messages/reads:
+    get:
+      tags: [Messages]
+      summary: Read positions of all members in a conversation
+      parameters:
+        - $ref: "#/components/parameters/ConversationIdQuery"
+      responses:
+        "200":
+          description: One entry per member who has read something
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/MessageRead"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/v1/messages/unread:
+    get:
+      tags: [Messages]
+      summary: Unread message counts for each of the caller's conversations
+      description: Counts messages from other users that are newer than the caller's read position.
+      responses:
+        "200":
+          description: Unread counts
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/UnreadCount"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ---------------------------------------------------------------- Upload
+  /api/v1/upload:
+    post:
+      tags: [Upload]
+      summary: Upload a single file to Cloudflare R2
+      description: |
+        Stores the file in R2 under `<folder>/<yyyy>/<mm>/<uuid><ext>` and
+        returns its public URL, which can be sent as an `images` entry of
+        `POST /api/v1/messages` or as a user `avatar`.
+
+        The content type is sniffed from the file. Images (except SVG), video,
+        audio and PDF are served inline; everything else is served as an
+        attachment. The size limit is `UPLOAD_MAX_SIZE_MB` (default 10 MB).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                folder:
+                  type: string
+                  description: Key prefix. Letters, digits, `-`, `_` and `/` only, max 64 characters.
+                  default: uploads
+                  example: avatars
+      responses:
+        "201":
+          description: Stored
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/UploadResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          description: File is larger than the limit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "502":
+          description: R2 rejected or failed the upload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token from `/api/v1/auth/login` or `/api/v1/auth/refresh-token`.
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: refresh_token
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ConversationIdQuery:
+      name: conversationId
+      in: query
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Forbidden:
+      description: Caller is not a member of the conversation, or not the sender
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    ServerError:
+      description: Internal error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Unauthorized:
+      description: Missing or invalid JWT (returned by the gateway)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/GatewayError"
+    PlainBadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PlainError"
+    PlainForbidden:
+      description: Caller is not a member of the conversation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PlainError"
+    PlainNotFound:
+      description: Conversation not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PlainError"
+    PlainServerError:
+      description: Internal error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PlainError"
+
+  schemas:
+    # ---- envelopes
+    Envelope:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          example: true
+        data: {}
+        meta: {}
+    ErrorEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              example: 400
+            message:
+              type: string
+    PlainError:
+      description: Error shape used by the conversation service
+      type: object
+      properties:
+        error:
+          type: string
+    GatewayError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: UNAUTHORIZED
+        message:
+          type: string
+          example: Invalid or expired token
+        data:
+          nullable: true
+          example: null
+
+    RegisteredService:
+      type: object
+      properties:
+        name:
+          type: string
+        path_prefix:
+          type: string
+        url:
+          type: string
+        require_auth:
+          type: boolean
+        supported_versions:
+          type: array
+          items:
+            type: string
+        deprecated_versions:
+          type: array
+          items:
+            type: string
+
+    # ---- auth
+    RegisterRequest:
+      type: object
+      required: [name, password, phone]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        phone:
+          type: string
+          maxLength: 10
+    LoginRequest:
+      type: object
+      required: [login, password]
+      properties:
+        login:
+          type: string
+          description: Email or phone number
+        password:
+          type: string
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Access token (JWT, claim `id` is the user id)
+        user:
+          $ref: "#/components/schemas/AuthUser"
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        created_at:
+          type: integer
+          format: int64
+          description: Currently always 0
+        updated_at:
+          type: integer
+          format: int64
+          description: Currently always 0
+
+    # ---- users
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+        avatar:
+          type: string
+        phone:
+          type: string
+        bio:
+          type: string
+        location:
+          type: string
+        is_active:
+          type: boolean
+        deleted_at:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    UpdateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        phone:
+          type: string
+        avatar:
+          type: string
+        bio:
+          type: string
+        location:
+          type: string
+
+    # ---- conversations
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        isGroup:
+          type: boolean
+        groupName:
+          type: string
+        groupAvatar:
+          type: string
+        description:
+          type: string
+        memberCount:
+          type: integer
+        lastMessage:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        memberIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CreateConversationRequest:
+      type: object
+      required: [isGroup, groupName, groupAvatar, description, tags, memberIds]
+      properties:
+        isGroup:
+          type: boolean
+        groupName:
+          type: string
+        groupAvatar:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        memberIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    UpdateConversationRequest:
+      type: object
+      properties:
+        isGroup:
+          type: boolean
+        groupName:
+          type: string
+        groupAvatar:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        memberIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    # ---- messages
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversationId:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [text, image]
+        content:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+        isEdited:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        clientId:
+          type: string
+          description: Only present in the create response, echoing the request
+    CreateMessageRequest:
+      type: object
+      required: [conversationId]
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+        content:
+          type: string
+          maxLength: 5000
+        images:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            format: uri
+        clientId:
+          type: string
+          maxLength: 64
+          description: Temporary client id for matching the optimistic message
+    UpdateMessageRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          maxLength: 5000
+    MarkReadRequest:
+      type: object
+      required: [conversationId, messageId]
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+        messageId:
+          type: string
+          format: uuid
+    MessageRead:
+      type: object
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        lastReadMessageId:
+          type: string
+          format: uuid
+        lastReadAt:
+          type: string
+          format: date-time
+          description: created_at of the last read message
+        updated_at:
+          type: string
+          format: date-time
+    UploadResult:
+      type: object
+      properties:
+        key:
+          type: string
+          example: avatars/2026/11/3f6c1e2a-8b1d-4c7e-9f2a-1d2e3f4a5b6c.png
+        url:
+          type: string
+          format: uri
+          example: https://pub-xxxxxxxx.r2.dev/avatars/2026/11/3f6c1e2a-8b1d-4c7e-9f2a-1d2e3f4a5b6c.png
+        name:
+          type: string
+          description: Original file name
+        size:
+          type: integer
+          format: int64
+        contentType:
+          type: string
+          example: image/png
+    UnreadCount:
+      type: object
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+        count:
+          type: integer
+          format: int64

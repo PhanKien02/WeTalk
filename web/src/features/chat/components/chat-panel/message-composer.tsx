@@ -5,14 +5,17 @@ import { ImagePlus, Paperclip, SendHorizontal, Smile, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useConversationTheme } from "../../context/conversation-theme-context";
 import { useImageLightbox } from "@/components/ui/image-lightbox";
+import { MAX_UPLOAD_SIZE } from "@/services/upload.service";
 import type { MessageComposerProps } from "@/type";
 
 const MAX_IMAGES = 10;
+const NOTICE_MS = 4000;
 
 interface PendingImage {
   id: string;
   url: string;
   name: string;
+  file: File;
 }
 
 export function MessageComposer({ onSendMessage, onTyping, onStopTyping }: MessageComposerProps) {
@@ -21,7 +24,14 @@ export function MessageComposer({ onSendMessage, onTyping, onStopTyping }: Messa
   const { openLightbox } = useImageLightbox();
   const [content, setContent] = useState("");
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   // Ảnh chưa gửi -> thu hồi object URL khi unmount để tránh rò rỉ bộ nhớ
   const pendingRef = useRef(pendingImages);
@@ -33,7 +43,11 @@ export function MessageComposer({ onSendMessage, onTyping, onStopTyping }: Messa
   }, []);
 
   const addFiles = (files: FileList | File[]) => {
-    const images = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    const all = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    const images = all.filter((f) => f.size <= MAX_UPLOAD_SIZE);
+    if (images.length < all.length) {
+      setNotice(`Ảnh lớn hơn ${MAX_UPLOAD_SIZE / 1024 / 1024} MB sẽ không được gửi`);
+    }
     if (!images.length) return;
     setPendingImages((prev) => {
       const room = MAX_IMAGES - prev.length;
@@ -41,6 +55,7 @@ export function MessageComposer({ onSendMessage, onTyping, onStopTyping }: Messa
         id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2, 7)}`,
         url: URL.createObjectURL(file),
         name: file.name,
+        file,
       }));
       return [...prev, ...next];
     });
@@ -58,10 +73,12 @@ export function MessageComposer({ onSendMessage, onTyping, onStopTyping }: Messa
 
   const handleSend = () => {
     if (!canSend) return;
-    // Object URL được giữ lại vì tin nhắn đã gửi vẫn dùng để hiển thị
+    // Object URL được chuyển cho tin nhắn optimistic; useChatMessages sẽ thu hồi sau khi gửi xong
     onSendMessage(
       content,
-      pendingImages.length ? pendingImages.map((img) => img.url) : undefined,
+      pendingImages.length
+        ? pendingImages.map((img) => ({ file: img.file, previewUrl: img.url }))
+        : undefined,
     );
     setContent("");
     setPendingImages([]);
@@ -92,6 +109,12 @@ export function MessageComposer({ onSendMessage, onTyping, onStopTyping }: Messa
         addFiles(e.dataTransfer.files);
       }}
     >
+      {notice && (
+        <p role="status" className="pl-14 text-xs text-red-500 animate-in fade-in-0 duration-200">
+          {notice}
+        </p>
+      )}
+
       {/* Image preview strip */}
       {pendingImages.length > 0 && (
         <div className="flex items-center gap-2.5 overflow-x-auto pb-1 pl-14 animate-in fade-in-0 slide-in-from-bottom-2 duration-200">

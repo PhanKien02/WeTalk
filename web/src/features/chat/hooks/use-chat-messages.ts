@@ -4,7 +4,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useAuth } from "@/lib/auth";
 import { SOCKET_EVENTS, useSocket } from "@/lib/socket";
 import { messageService } from "@/services/message.service";
-import type { Conversation, Message, MessageRead, RawMessage } from "@/type";
+import { uploadService } from "@/services/upload.service";
+import type { ComposerImage, Conversation, Message, MessageRead, RawMessage } from "@/type";
 import { useConversationsContext } from "../context/conversations-context";
 import {
   formatMessageTime,
@@ -16,7 +17,32 @@ import {
 const PAGE_SIZE = 30;
 // Cách đáy bao nhiêu px thì vẫn coi là đang xem tin mới nhất (tự cuộn khi có tin mới)
 const NEAR_BOTTOM_PX = 120;
-const IMAGE_UNSUPPORTED = "Chưa hỗ trợ gửi ảnh (chưa có dịch vụ tải ảnh lên)";
+const UPLOAD_FOLDER = "messages";
+
+/** Ảnh của một tin nhắn đang gửi. Giữ lại khi lỗi để "Thử lại" chỉ tải lên ảnh còn thiếu. */
+interface PendingUpload {
+  files: File[];
+  previews: string[];
+  /** URL trên R2 của từng ảnh; undefined nếu chưa tải lên xong */
+  uploaded: (string | undefined)[];
+}
+
+function revokePreviews(pending: PendingUpload) {
+  pending.previews.forEach((url) => URL.revokeObjectURL(url));
+}
+
+/** Tải lên song song các ảnh chưa có URL. Ảnh thành công được ghi lại kể cả khi ảnh khác lỗi. */
+async function uploadPending(pending: PendingUpload): Promise<string[]> {
+  await Promise.all(
+    pending.files.map(async (file, i) => {
+      if (pending.uploaded[i]) return;
+      const res = await uploadService.uploadFile(file, { folder: UPLOAD_FOLDER });
+      if (!res.data?.url) throw new Error("Upload service không trả về URL");
+      pending.uploaded[i] = res.data.url;
+    })
+  );
+  return pending.uploaded as string[];
+}
 
 type PendingScroll =
   | { type: "bottom"; smooth: boolean }
@@ -60,6 +86,20 @@ export function useChatMessages(conversation: Conversation) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const pendingScroll = useRef<PendingScroll | null>(null);
   const loadingMoreRef = useRef(false);
+  // Ảnh của các tin nhắn đang gửi hoặc gửi lỗi, theo clientId
+  const uploadsRef = useRef(new Map<string, PendingUpload>());
+  // Conversation đang mở, để kết quả gửi muộn không bị chèn vào conversation khác
+  const conversationRef = useRef(conversationId);
+
+  useEffect(() => {
+    conversationRef.current = conversationId;
+    const uploads = uploadsRef.current;
+    // Rời conversation (hoặc unmount): tin nhắn lỗi không còn hiển thị, thu hồi ảnh xem trước
+    return () => {
+      uploads.forEach(revokePreviews);
+      uploads.clear();
+    };
+  }, [conversationId]);
 
   if (conversationId !== prevConversationId) {
     setPrevConversationId(conversationId);
@@ -271,38 +311,68 @@ export function useChatMessages(conversation: Conversation) {
   const deliver = useCallback(
     async (message: Message) => {
       const clientId = message.clientId!;
+      const pending = uploadsRef.current.get(clientId);
+      const isCurrent = () => conversationRef.current === conversationId;
+
+      let images: string[] | undefined;
+      if (pending) {
+        try {
+          images = await uploadPending(pending);
+        } catch (err) {
+          if (isCurrent()) markFailed(clientId, errorMessage(err, "Tải ảnh lên thất bại"));
+          return;
+        }
+      }
+
       try {
         const res = await messageService.sendMessage({
           conversationId,
           content: message.content,
+          images,
           clientId,
         });
         if (res.data) {
-          setMessages((current) =>
-            upsertMessage(current, normalizeMessage(res.data!, currentUserId))
-          );
+          if (isCurrent()) {
+            setMessages((current) =>
+              upsertMessage(current, normalizeMessage(res.data!, currentUserId))
+            );
+          }
           applyMessage(res.data);
         }
+        // Tin nhắn giờ dùng URL trên R2, không cần ảnh xem trước nữa
+        if (pending) {
+          uploadsRef.current.delete(clientId);
+          revokePreviews(pending);
+        }
       } catch (err) {
-        markFailed(clientId, errorMessage(err, "Gửi tin nhắn thất bại"));
+        if (isCurrent()) markFailed(clientId, errorMessage(err, "Gửi tin nhắn thất bại"));
       }
     },
     [applyMessage, conversationId, currentUserId, markFailed]
   );
 
   const sendMessage = useCallback(
-    (content: string, images?: string[]) => {
+    (content: string, images?: ComposerImage[]) => {
       const text = content.trim();
       if (!text && !images?.length) return;
 
       const clientId = newClientId();
+      const previews = images?.map((img) => img.previewUrl) ?? [];
+      if (images?.length) {
+        uploadsRef.current.set(clientId, {
+          files: images.map((img) => img.file),
+          previews,
+          uploaded: images.map(() => undefined),
+        });
+      }
+
       const optimistic: Message = {
         id: clientId,
         clientId,
         conversationId,
         senderId: currentUserId || "me",
         content: text,
-        images: images?.length ? images : undefined,
+        images: previews.length ? previews : undefined,
         timestamp: formatMessageTime(),
         isOwn: true,
         status: "sending",
@@ -310,20 +380,16 @@ export function useChatMessages(conversation: Conversation) {
 
       pendingScroll.current = { type: "bottom", smooth: true };
       setMessages((current) => [...current, optimistic]);
-
-      // Ảnh trong composer là blob: URL chỉ tồn tại trên máy này, gửi lên sẽ vô dụng
-      if (optimistic.images) {
-        markFailed(clientId, IMAGE_UNSUPPORTED);
-        return;
-      }
       void deliver(optimistic);
     },
-    [conversationId, currentUserId, deliver, markFailed]
+    [conversationId, currentUserId, deliver]
   );
 
   const retryMessage = useCallback(
     (message: Message) => {
-      if (!message.clientId || message.images?.length) return;
+      if (!message.clientId) return;
+      // Tin có ảnh chỉ gửi lại được khi còn giữ file gốc
+      if (message.images?.length && !uploadsRef.current.has(message.clientId)) return;
       setMessages((current) =>
         current.map((m) =>
           m.clientId === message.clientId
